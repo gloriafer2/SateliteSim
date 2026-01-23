@@ -14,11 +14,32 @@ import datastructura.ListaEnlazada;
 public class VentanaPrincipal extends javax.swing.JFrame {
 // Esta es la cola donde guardo los procesos generados
 datastructura.ListaEnlazada colaListos = new datastructura.ListaEnlazada();
+int segundosMision = 0;
+clases.Proceso procesoEnEjecucion = null;
     /**
      * Creates new form VentanaPrincipal
      */
     public VentanaPrincipal() {
         initComponents();
+        // En el constructor, debajo de initComponents()
+            Thread hiloPrincipal = new Thread() {
+                @Override
+                public void run() {
+                    while (true) {
+                        try {
+                            Thread.sleep(1000); // 1 segundo
+                            segundosMision++;
+                            lblReloj.setText("Reloj de Misión: " + segundosMision + "s");
+
+                            // Lógica del satélite
+                            ejecutarProcesador();
+
+                        } catch (Exception e) { }
+                    }
+                }
+            };
+            hiloPrincipal.start();
+
     }
 
     /**
@@ -198,6 +219,26 @@ datastructura.ListaEnlazada colaListos = new datastructura.ListaEnlazada();
     }
 }
 
+    public void ejecutarProcesador() {
+    // Si no hay proceso trabajando, busco uno en la lista
+    if (procesoEnEjecucion == null) {
+        procesoEnEjecucion = colaListos.eliminarPrimero();
+        if (procesoEnEjecucion != null) {
+            procesoEnEjecucion.setEstado("Ejecutando");
+            actualizarTabla(); // Refresca la tabla para que el proceso salga de la lista
+            System.out.println("Iniciando: " + procesoEnEjecucion.getNombre());
+        }
+    } else {
+        
+        int restantes = procesoEnEjecucion.getInstruccionesTotales() - 1;
+        procesoEnEjecucion.setInstruccionesTotales(restantes);
+        
+        if (restantes <= 0) {
+            System.out.println("Finalizado: " + procesoEnEjecucion.getNombre());
+            procesoEnEjecucion = null; // Libera el procesador
+        }
+    }
+}
 }
 
 

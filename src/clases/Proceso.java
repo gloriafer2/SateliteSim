@@ -36,6 +36,7 @@ public class Proceso {
         this.mar = 0;
     }
     
+    
     // --- Métodos Getters (Necesarios para la JTable) ---
     public String getId() { return id; }
     public String getNombre() { return nombre; }
@@ -50,4 +51,8 @@ public class Proceso {
     public void setEstado(String estado) { this.estado = estado; }
     public void setPc(int pc) { this.pc = pc; }
     public void setMar(int mar) { this.mar = mar; }
+    public void setInstruccionesTotales(int instruccionesTotales) {
+    this.instruccionesTotales = instruccionesTotales;
+    }
 }
+
