@@ -15,9 +15,12 @@ public class ListaEnlazada {
     public ListaEnlazada() {
         this.cabeza = null;
         this.tamaño = 0;
-    
     }
-    // Método para encolar un proceso (ponerlo al final)
+
+    /**
+     * Método para encolar un proceso (ponerlo al final de la lista).
+     * @param proceso El objeto Proceso a agregar.
+     */
     public void agregar(Proceso proceso) {
         Nodo nuevoNodo = new Nodo(proceso);
         if (cabeza == null) {
@@ -32,7 +35,10 @@ public class ListaEnlazada {
         tamaño++;
     }
 
-   
+    /**
+     * Método para extraer el primer proceso de la lista (Simulación de despacho).
+     * @return El proceso al inicio de la lista.
+     */
     public Proceso eliminarPrimero() {
         if (cabeza == null) return null;
         Proceso proceso = cabeza.getDato();
@@ -41,5 +47,17 @@ public class ListaEnlazada {
         return proceso;
     }
 
-    public int getTamaño() { return tamaño; }
+    // --- Getters necesarios para la lógica y la interfaz ---
+
+    public int getTamaño() { 
+        return tamaño; 
+    }
+
+    /**
+     * Retorna el primer nodo de la lista. 
+     * Es fundamental para que el método actualizarTabla() pueda recorrer los procesos.
+     */
+    public Nodo getInicio() {
+        return cabeza; //
+    }
 }
