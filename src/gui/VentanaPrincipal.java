@@ -220,22 +220,29 @@ clases.Proceso procesoEnEjecucion = null;
 }
 
     public void ejecutarProcesador() {
-    // Si no hay proceso trabajando, busco uno en la lista
     if (procesoEnEjecucion == null) {
         procesoEnEjecucion = colaListos.eliminarPrimero();
         if (procesoEnEjecucion != null) {
-            procesoEnEjecucion.setEstado("Ejecutando");
-            actualizarTabla(); // Refresca la tabla para que el proceso salga de la lista
-            System.out.println("Iniciando: " + procesoEnEjecucion.getNombre());
+            actualizarTabla();
+            System.out.println("Satélite tomó: " + procesoEnEjecucion.getNombre());
         }
     } else {
-        
+       
+        // Si el tiempo actual de la misión superó el límite del proceso
+        if (segundosMision > procesoEnEjecucion.getTiempoLimite()) {
+            System.out.println("¡CRÍTICO! Deadline superado para: " + procesoEnEjecucion.getNombre());
+            procesoEnEjecucion.setEstado("FALLIDO"); 
+            procesoEnEjecucion = null; // Se descarta el proceso por viejo
+            return; 
+        }
+
+        // procesamiento normal
         int restantes = procesoEnEjecucion.getInstruccionesTotales() - 1;
         procesoEnEjecucion.setInstruccionesTotales(restantes);
         
         if (restantes <= 0) {
-            System.out.println("Finalizado: " + procesoEnEjecucion.getNombre());
-            procesoEnEjecucion = null; // Libera el procesador
+            System.out.println("Misión cumplida: " + procesoEnEjecucion.getNombre());
+            procesoEnEjecucion = null; 
         }
     }
 }
