@@ -18,27 +18,29 @@ public class ListaEnlazada {
     }
 
     /**
-     * Método para encolar un proceso (ponerlo al final de la lista).
-     * @param proceso El objeto Proceso a agregar.
+     * Inserta un proceso en la lista manteniendo el orden de prioridad de 1 a 5.
+     * Los procesos con mayor prioridad quedan al inicio.
      */
-    public void agregar(Proceso proceso) {
-        Nodo nuevoNodo = new Nodo(proceso);
-        if (cabeza == null) {
-            cabeza = nuevoNodo;
-        } else {
-            Nodo actual = cabeza;
-            while (actual.getSiguiente() != null) {
-                actual = actual.getSiguiente();
-            }
-            actual.setSiguiente(nuevoNodo);
-        }
-        tamaño++;
-    }
+    public void agregar(Proceso nuevoProceso) {
+    Nodo nuevoNodo = new Nodo(nuevoProceso);
 
-    /**
-     * Método para extraer el primer proceso de la lista (Simulación de despacho).
-     * @return El proceso al inicio de la lista.
-     */
+    // Si el número es menor, tiene mas prioridad y va al inicio
+    if (cabeza == null || nuevoProceso.getPrioridad() < cabeza.getDato().getPrioridad()) {
+        nuevoNodo.setSiguiente(cabeza);
+        cabeza = nuevoNodo;
+    } else {
+        Nodo actual = cabeza;
+        // Avanza mientras el número sea menor o igual al nuevo
+        while (actual.getSiguiente() != null && 
+               actual.getSiguiente().getDato().getPrioridad() <= nuevoProceso.getPrioridad()) {
+            actual = actual.getSiguiente();
+        }
+        nuevoNodo.setSiguiente(actual.getSiguiente());
+        actual.setSiguiente(nuevoNodo);
+    }
+    tamaño++;
+}
+
     public Proceso eliminarPrimero() {
         if (cabeza == null) return null;
         Proceso proceso = cabeza.getDato();
@@ -47,17 +49,11 @@ public class ListaEnlazada {
         return proceso;
     }
 
-    // --- Getters necesarios para la lógica y la interfaz ---
-
     public int getTamaño() { 
         return tamaño; 
     }
 
-    /**
-     * Retorna el primer nodo de la lista. 
-     * Es fundamental para que el método actualizarTabla() pueda recorrer los procesos.
-     */
     public Nodo getInicio() {
-        return cabeza; //
+        return cabeza; 
     }
 }
