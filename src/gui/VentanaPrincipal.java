@@ -19,9 +19,14 @@ clases.Proceso procesoEnEjecucion = null;
     /**
      * Creates new form VentanaPrincipal
      */
+// El satélite tiene una RAM limitada
+private final int MAX_MEMORIA_RAM = 200; // MB
+private int memoriaUsadaActual = 0;
+
+
     public VentanaPrincipal() {
         initComponents();
-        // En el constructor, debajo de initComponents()
+        
             Thread hiloPrincipal = new Thread() {
                 @Override
                 public void run() {
@@ -56,6 +61,8 @@ clases.Proceso procesoEnEjecucion = null;
         btnGenerar = new javax.swing.JButton();
         jScrollPane1 = new javax.swing.JScrollPane();
         jTable1 = new javax.swing.JTable();
+        jScrollPane3 = new javax.swing.JScrollPane();
+        txtLog = new javax.swing.JTextArea();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -70,17 +77,17 @@ clases.Proceso procesoEnEjecucion = null;
 
         jTable1.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {null, null, null, null, null},
-                {null, null, null, null, null},
-                {null, null, null, null, null},
-                {null, null, null, null, null}
+                {null, null, null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null, null, null}
             },
             new String [] {
-                "ID", "Nombre", "Instrucciones", "Prioridad", "Deadline"
+                "ID", "Nombre", "Instrucciones", "Prioridad", "Deadline", "PC", "MAR", "Memoria(MB)", "Estado"
             }
         ) {
             Class[] types = new Class [] {
-                java.lang.Integer.class, java.lang.String.class, java.lang.Integer.class, java.lang.Integer.class, java.lang.Integer.class
+                java.lang.Integer.class, java.lang.String.class, java.lang.Integer.class, java.lang.Integer.class, java.lang.Integer.class, java.lang.Integer.class, java.lang.Integer.class, java.lang.Integer.class, java.lang.String.class
             };
 
             public Class getColumnClass(int columnIndex) {
@@ -89,67 +96,86 @@ clases.Proceso procesoEnEjecucion = null;
         });
         jScrollPane1.setViewportView(jTable1);
 
+        txtLog.setColumns(20);
+        txtLog.setRows(5);
+        jScrollPane3.setViewportView(txtLog);
+
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-                .addContainerGap(252, Short.MAX_VALUE)
-                .addComponent(lblReloj)
-                .addGap(20, 20, 20))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(btnGenerar)
+                .addGap(358, 358, 358))
             .addGroup(jPanel1Layout.createSequentialGroup()
+                .addGap(16, 16, 16)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addGap(128, 128, 128)
-                        .addComponent(btnGenerar))
+                        .addComponent(lblReloj)
+                        .addGap(0, 0, Short.MAX_VALUE))
                     .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addGap(29, 29, 29)
-                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 296, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 719, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(18, 18, 18)
+                        .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 249, Short.MAX_VALUE)
+                        .addContainerGap())))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel1Layout.createSequentialGroup()
-                .addGap(16, 16, 16)
+                .addGap(73, 73, 73)
                 .addComponent(lblReloj)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 33, Short.MAX_VALUE)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 123, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(26, 26, 26)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addGap(51, 51, 51)
+                        .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 155, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addGap(34, 34, 34)
+                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 225, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addGap(43, 43, 43)
                 .addComponent(btnGenerar)
-                .addGap(63, 63, 63))
+                .addContainerGap(156, Short.MAX_VALUE))
         );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+            .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addContainerGap())
+                .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jPanel1, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addGroup(layout.createSequentialGroup()
+                .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(0, 220, Short.MAX_VALUE))
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnGenerarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnGenerarActionPerformed
-        for (int i = 1; i <= 20; i++) {
-        
+      for (int i = 1; i <= 20; i++) {
         int instrucciones = (int) (Math.random() * 50) + 10;
         int prioridad = (int) (Math.random() * 5) + 1;
         int deadline = (int) (Math.random() * 100) + 20;
-        
-        
+
         clases.Proceso nuevo = new clases.Proceso("P" + i, "Tarea_" + i, instrucciones, prioridad, deadline);
         
-        
-        colaListos.agregar(nuevo); 
+        // Lógica de Admisión por Memoria
+        if (memoriaUsadaActual + nuevo.getMemoriaMb() <= MAX_MEMORIA_RAM) {
+            nuevo.setEstado("Listo");
+            colaListos.agregar(nuevo);
+            memoriaUsadaActual += nuevo.getMemoriaMb();
+            escribirLog("ADMITIDO: " + nuevo.getNombre() + " en RAM (" + nuevo.getMemoriaMb() + "MB)");
+        } else {
+            // colaSuspendidos (ListaEnlazada)
+            nuevo.setEstado("Listo/Suspendido");
+            escribirLog("SWAP: " + nuevo.getNombre() + " enviado a disco por falta de RAM.");
+            // colaSuspendidos.agregar(nuevo); 
+        }
     }
-    
     actualizarTabla();
     }//GEN-LAST:event_btnGenerarActionPerformed
 
@@ -192,30 +218,47 @@ clases.Proceso procesoEnEjecucion = null;
     private javax.swing.JButton btnGenerar;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JScrollPane jScrollPane2;
+    private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JTable jTable1;
     private javax.swing.JLabel lblReloj;
+    private javax.swing.JTextArea txtLog;
     // End of variables declaration//GEN-END:variables
 
     public void actualizarTabla() {
-    // Obtengo el modelo de la tabla 
     javax.swing.table.DefaultTableModel modelo = (javax.swing.table.DefaultTableModel) jTable1.getModel();
-    
-    // Limpio la tabla para que no se dupliquen al volver a presionar el botón
     modelo.setRowCount(0);
     
-    // Recorro la lista usando los nodos 
     datastructura.Nodo aux = colaListos.getInicio(); 
     while (aux != null) {
         clases.Proceso p = aux.getDato();
-        // Agrego la fila con el orden que puse en el diseño
+        //  los datos en el orden de las columnas de diseño
         modelo.addRow(new Object[]{
             p.getId(), 
             p.getNombre(), 
             p.getInstruccionesTotales(), 
             p.getPrioridad(), 
-            p.getTiempoLimite()
+            p.getTiempoLimite(),
+            p.getPc(),     
+            p.getMar(),    
+            p.getEstado()   
         });
         aux = aux.getSiguiente();
+    }
+
+    // que proceso se esta ejecutando
+    if (procesoEnEjecucion != null) {
+        modelo.addRow(new Object[]{
+            procesoEnEjecucion.getId(), 
+            procesoEnEjecucion.getNombre(), 
+            procesoEnEjecucion.getInstruccionesTotales(), 
+            procesoEnEjecucion.getPrioridad(), 
+            procesoEnEjecucion.getTiempoLimite(),
+            procesoEnEjecucion.getPc(),
+            procesoEnEjecucion.getMar(),
+            procesoEnEjecucion.getMemoriaMb(),
+            procesoEnEjecucion.getEstado()
+        });
     }
 }
 
@@ -223,28 +266,37 @@ clases.Proceso procesoEnEjecucion = null;
     if (procesoEnEjecucion == null) {
         procesoEnEjecucion = colaListos.eliminarPrimero();
         if (procesoEnEjecucion != null) {
+            procesoEnEjecucion.setEstado("Ejecución");
             actualizarTabla();
-            System.out.println("Satélite tomó: " + procesoEnEjecucion.getNombre());
+            escribirLog("Satélite inició: " + procesoEnEjecucion.getNombre() + " [Prioridad " + procesoEnEjecucion.getPrioridad() + "]");
         }
     } else {
-       
-        // Si el tiempo actual de la misión superó el límite del proceso
+        //  Verifico Deadline 
         if (segundosMision > procesoEnEjecucion.getTiempoLimite()) {
-            System.out.println("¡CRÍTICO! Deadline superado para: " + procesoEnEjecucion.getNombre());
-            procesoEnEjecucion.setEstado("FALLIDO"); 
-            procesoEnEjecucion = null; // Se descarta el proceso por viejo
-            return; 
+            escribirLog("¡FALLO CRÍTICO! Deadline superado en: " + procesoEnEjecucion.getNombre());
+            procesoEnEjecucion.setEstado("FALLIDO");
+            procesoEnEjecucion = null;
+            actualizarTabla();
+            return;
         }
 
-        // procesamiento normal
-        int restantes = procesoEnEjecucion.getInstruccionesTotales() - 1;
-        procesoEnEjecucion.setInstruccionesTotales(restantes);
+       
+        procesoEnEjecucion.ejecutarCiclo();
         
-        if (restantes <= 0) {
-            System.out.println("Misión cumplida: " + procesoEnEjecucion.getNombre());
-            procesoEnEjecucion = null; 
+       
+        if (procesoEnEjecucion.getInstruccionesTotales() <= 0) {
+            escribirLog("ÉXITO: " + procesoEnEjecucion.getNombre() + " completó su misión.");
+            procesoEnEjecucion.setEstado("Terminado");
+            procesoEnEjecucion = null;
         }
+        
+        actualizarTabla();
     }
+}
+    
+    public void escribirLog(String mensaje) {
+   txtLog.append("[" + segundosMision + "s] " + mensaje + "\n");
+     txtLog.setCaretPosition( txtLog.getDocument().getLength());
 }
 }
 
