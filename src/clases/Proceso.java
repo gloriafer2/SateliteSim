@@ -15,7 +15,7 @@ public class Proceso {
     private String estado;  
     private int prioridad;
     
-    // Registros de la CPU (Exigidos por el PDF)
+    // Registros de la CPU
     private int pc;  // Program Counter
     private int mar; // Memory Address Register
     
