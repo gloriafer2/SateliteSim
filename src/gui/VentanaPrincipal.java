@@ -7,6 +7,7 @@ package gui;
 import clases.Proceso;
 import datastructura.ListaEnlazada;
 
+
 /**
  *
  * @author Gloria
@@ -14,7 +15,12 @@ import datastructura.ListaEnlazada;
 public class VentanaPrincipal extends javax.swing.JFrame {
 // Esta es la cola donde guardo los procesos generados
 datastructura.ListaEnlazada colaListos = new datastructura.ListaEnlazada();
+datastructura.ListaEnlazada colaBloqueados = new datastructura.ListaEnlazada();
+datastructura.ListaEnlazada colaSuspendidos = new datastructura.ListaEnlazada();
+
 int segundosMision = 0;
+private int contadorGlobal = 1; // Para que P1, P2... funcionen
+private int memoriaUsada = 0;   // Para llevar el control de los 200MB de RAM
 clases.Proceso procesoEnEjecucion = null;
     /**
      * Creates new form VentanaPrincipal
@@ -63,6 +69,7 @@ private int memoriaUsadaActual = 0;
         jTable1 = new javax.swing.JTable();
         jScrollPane3 = new javax.swing.JScrollPane();
         txtLog = new javax.swing.JTextArea();
+        btnInterrupcion = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -100,12 +107,21 @@ private int memoriaUsadaActual = 0;
         txtLog.setRows(5);
         jScrollPane3.setViewportView(txtLog);
 
+        btnInterrupcion.setText("SIMULAR IMPACTO");
+        btnInterrupcion.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnInterrupcionActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(btnInterrupcion)
+                .addGap(121, 121, 121)
                 .addComponent(btnGenerar)
                 .addGap(358, 358, 358))
             .addGroup(jPanel1Layout.createSequentialGroup()
@@ -133,7 +149,9 @@ private int memoriaUsadaActual = 0;
                         .addGap(34, 34, 34)
                         .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 225, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addGap(43, 43, 43)
-                .addComponent(btnGenerar)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(btnGenerar)
+                    .addComponent(btnInterrupcion))
                 .addContainerGap(156, Short.MAX_VALUE))
         );
 
@@ -157,27 +175,75 @@ private int memoriaUsadaActual = 0;
 
     private void btnGenerarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnGenerarActionPerformed
       for (int i = 1; i <= 20; i++) {
+       
+        String id = "P" + contadorGlobal;
+        String nombre = "Tarea_" + contadorGlobal;
         int instrucciones = (int) (Math.random() * 50) + 10;
-        int prioridad = (int) (Math.random() * 5) + 1;
-        int deadline = (int) (Math.random() * 100) + 20;
-
-        clases.Proceso nuevo = new clases.Proceso("P" + i, "Tarea_" + i, instrucciones, prioridad, deadline);
+        int prioridad = (int) (Math.random() * 5) + 1; // Prioridad del 1 al 5
+        int memoriaMB = (int) (Math.random() * 50) + 10; // Memoria aleatoria
+        int deadline = (int) (Math.random() * 100) + 50;
         
-        // Lógica de Admisión por Memoria
-        if (memoriaUsadaActual + nuevo.getMemoriaMb() <= MAX_MEMORIA_RAM) {
+        
+        
+        clases.Proceso nuevo = new clases.Proceso(id, nombre, instrucciones, prioridad, deadline);
+        nuevo.setEstado("Nuevo");
+
+        // cabe en ram
+        if (memoriaUsada + memoriaMB <= 200) { 
             nuevo.setEstado("Listo");
-            colaListos.agregar(nuevo);
-            memoriaUsadaActual += nuevo.getMemoriaMb();
-            escribirLog("ADMITIDO: " + nuevo.getNombre() + " en RAM (" + nuevo.getMemoriaMb() + "MB)");
+            colaListos.agregar(nuevo); 
+            memoriaUsada += memoriaMB;
+            escribirLog("ADMITIDO: " + nombre + " en RAM (" + memoriaMB + "MB)");
         } else {
-            // colaSuspendidos (ListaEnlazada)
-            nuevo.setEstado("Listo/Suspendido");
-            escribirLog("SWAP: " + nuevo.getNombre() + " enviado a disco por falta de RAM.");
-            // colaSuspendidos.agregar(nuevo); 
+            // Si no cabe, se va a la cola de Suspendidos
+            nuevo.setEstado("Suspendido");
+            colaSuspendidos.agregar(nuevo);
+            escribirLog("SWAP: " + nombre + " enviado a disco por falta de RAM");
         }
+        contadorGlobal++;
     }
+    
+    
+    ordenarColaPorPrioridad(colaListos); 
+    
     actualizarTabla();
     }//GEN-LAST:event_btnGenerarActionPerformed
+
+    
+    
+    private void ordenarColaPorPrioridad(datastructura.ListaEnlazada lista) {
+    if (lista.estaVacia()) return;
+    
+    boolean intercambio;
+    do {
+        intercambio = false;
+        datastructura.Nodo actual = lista.getInicio();
+        while (actual != null && actual.getSiguiente() != null) {
+            if (actual.getDato().getPrioridad() > actual.getSiguiente().getDato().getPrioridad()) {
+                clases.Proceso temp = actual.getDato();
+                actual.setDato(actual.getSiguiente().getDato());
+                actual.getSiguiente().setDato(temp);
+                intercambio = true;
+            }
+            actual = actual.getSiguiente();
+        }
+    } while (intercambio);
+}
+    private void btnInterrupcionActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnInterrupcionActionPerformed
+        if (procesoEnEjecucion != null) {
+        escribirLog("¡ALERTA! Impacto detectado. Bloqueando " + procesoEnEjecucion.getNombre());
+        
+        // Cambio el estado y lo muevo a la nueva cola
+        procesoEnEjecucion.setEstado("Bloqueado");
+        colaBloqueados.agregar(procesoEnEjecucion);
+        
+        // Libero el procesador para que pase el siguiente
+        procesoEnEjecucion = null; 
+        actualizarTabla();
+        } else {
+        escribirLog("No hay procesos en ejecución para interrumpir.");
+        }     
+    }//GEN-LAST:event_btnInterrupcionActionPerformed
 
     /**
      * @param args the command line arguments
@@ -216,6 +282,7 @@ private int memoriaUsadaActual = 0;
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnGenerar;
+    private javax.swing.JButton btnInterrupcion;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
