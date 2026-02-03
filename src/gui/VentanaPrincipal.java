@@ -6,6 +6,9 @@ package gui;
 
 import clases.Proceso;
 import datastructura.ListaEnlazada;
+import java.util.concurrent.Semaphore;
+import logic.CPUThread;
+
 
 
 /**
@@ -20,7 +23,10 @@ datastructura.ListaEnlazada colaSuspendidos = new datastructura.ListaEnlazada();
 
 int segundosMision = 0;
 private int contadorGlobal = 1; // Para que P1, P2... funcionen
-private int memoriaUsada = 0;   // Para llevar el control de los 200MB de RAM
+private int memoriaUsada = 0;  
+private Semaphore semaforoGlobal = new Semaphore(1);
+private CPUThread cpu;
+// Para llevar el control de los 200MB de RAM
 clases.Proceso procesoEnEjecucion = null;
     /**
      * Creates new form VentanaPrincipal
@@ -32,25 +38,15 @@ private int memoriaUsadaActual = 0;
 
     public VentanaPrincipal() {
         initComponents();
+        // Inicializamos el hilo externo pasándole las listas que ya tienes y el semáforo
+        cpu = new CPUThread(colaListos, colaBloqueados, semaforoGlobal);
+        cpu.start(); // El motor empieza a buscar procesos en colaListos
         
-            Thread hiloPrincipal = new Thread() {
-                @Override
-                public void run() {
-                    while (true) {
-                        try {
-                            Thread.sleep(1000); // 1 segundo
-                            segundosMision++;
-                            lblReloj.setText("Reloj de Misión: " + segundosMision + "s");
-
-                            // Lógica del satélite
-                            ejecutarProcesador();
-
-                        } catch (Exception e) { }
-                    }
-                }
-            };
-            hiloPrincipal.start();
-
+        new javax.swing.Timer(1000, (e) ->{
+            actualizarTabla();
+            lblReloj.setText("Reloj de mision: "+ segundosMision + "s");
+        }).start();
+           
     }
 
     /**
@@ -133,7 +129,7 @@ private int memoriaUsadaActual = 0;
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 719, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(18, 18, 18)
-                        .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 249, Short.MAX_VALUE)
+                        .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 238, Short.MAX_VALUE)
                         .addContainerGap())))
         );
         jPanel1Layout.setVerticalGroup(
@@ -143,11 +139,11 @@ private int memoriaUsadaActual = 0;
                 .addComponent(lblReloj)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addGap(51, 51, 51)
-                        .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 155, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(jPanel1Layout.createSequentialGroup()
                         .addGap(34, 34, 34)
-                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 225, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 225, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
+                        .addGap(51, 51, 51)
+                        .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 208, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addGap(43, 43, 43)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(btnGenerar)
@@ -167,46 +163,45 @@ private int memoriaUsadaActual = 0;
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 220, Short.MAX_VALUE))
+                .addGap(0, 187, Short.MAX_VALUE))
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnGenerarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnGenerarActionPerformed
-      for (int i = 1; i <= 20; i++) {
-       
-        String id = "P" + contadorGlobal;
-        String nombre = "Tarea_" + contadorGlobal;
-        int instrucciones = (int) (Math.random() * 50) + 10;
-        int prioridad = (int) (Math.random() * 5) + 1; // Prioridad del 1 al 5
-        int memoriaMB = (int) (Math.random() * 50) + 10; // Memoria aleatoria
-        int deadline = (int) (Math.random() * 100) + 50;
+      
+        try{
+            semaforoGlobal.acquire();
         
-        
-        
-        clases.Proceso nuevo = new clases.Proceso(id, nombre, instrucciones, prioridad, deadline);
-        nuevo.setEstado("Nuevo");
-
-        // cabe en ram
-        if (memoriaUsada + memoriaMB <= 200) { 
-            nuevo.setEstado("Listo");
-            colaListos.agregar(nuevo); 
-            memoriaUsada += memoriaMB;
-            escribirLog("ADMITIDO: " + nombre + " en RAM (" + memoriaMB + "MB)");
-        } else {
-            // Si no cabe, se va a la cola de Suspendidos
-            nuevo.setEstado("Suspendido");
-            colaSuspendidos.agregar(nuevo);
-            escribirLog("SWAP: " + nombre + " enviado a disco por falta de RAM");
-        }
-        contadorGlobal++;
-    }
-    
-    
-    ordenarColaPorPrioridad(colaListos); 
-    
-    actualizarTabla();
+                for (int i = 1; i <= 20; i++) {
+                String id = "P" + contadorGlobal;
+                String nombre = "Tarea_" + contadorGlobal;
+                int instrucciones = (int) (Math.random() * 50) + 10;
+                int prioridad = (int) (Math.random() * 5) + 1; // Prioridad del 1 al 5
+                int memoriaMB = (int) (Math.random() * 50) + 10; // Memoria aleatoria
+                int deadline = (int) (Math.random() * 100) + 50;
+                
+                clases.Proceso nuevo = new clases.Proceso(id, nombre, instrucciones, prioridad, deadline);
+                nuevo.setEstado("Nuevo");
+                // cabe en ram
+                if (memoriaUsada + memoriaMB <= 200) { 
+                    nuevo.setEstado("Listo");
+                    colaListos.agregar(nuevo); 
+                    memoriaUsada += memoriaMB;
+                    escribirLog("ADMITIDO: " + nombre + " en RAM (" + memoriaMB + "MB)");
+                } else {
+                    // Si no cabe, se va a la cola de Suspendidos
+                    nuevo.setEstado("Suspendido");
+                    colaSuspendidos.agregar(nuevo);
+                    escribirLog("SWAP: " + nombre + " enviado a disco por falta de RAM");
+                }
+                contadorGlobal++;
+            }
+            ordenarColaPorPrioridad(colaListos); 
+            semaforoGlobal.release();
+            actualizarTabla();
+        }catch (InterruptedException e) {}
     }//GEN-LAST:event_btnGenerarActionPerformed
 
     
@@ -230,19 +225,8 @@ private int memoriaUsadaActual = 0;
     } while (intercambio);
 }
     private void btnInterrupcionActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnInterrupcionActionPerformed
-        if (procesoEnEjecucion != null) {
-        escribirLog("¡ALERTA! Impacto detectado. Bloqueando " + procesoEnEjecucion.getNombre());
-        
-        // Cambio el estado y lo muevo a la nueva cola
-        procesoEnEjecucion.setEstado("Bloqueado");
-        colaBloqueados.agregar(procesoEnEjecucion);
-        
-        // Libero el procesador para que pase el siguiente
-        procesoEnEjecucion = null; 
-        actualizarTabla();
-        } else {
-        escribirLog("No hay procesos en ejecución para interrumpir.");
-        }     
+       cpu.activarInterrupcion();
+       escribirLog("iMPACTO DETECTADO: Enviando al satelite");
     }//GEN-LAST:event_btnInterrupcionActionPerformed
 
     /**
@@ -296,6 +280,24 @@ private int memoriaUsadaActual = 0;
     javax.swing.table.DefaultTableModel modelo = (javax.swing.table.DefaultTableModel) jTable1.getModel();
     modelo.setRowCount(0);
     
+    clases.Proceso ejec = cpu.getProcesoEnEjecucion();
+    if (ejec != null){
+        modelo.addRow(new Object[]{
+            ejec.getId(), 
+            ejec.getNombre(), 
+            ejec.getInstruccionesTotales(), 
+            ejec.getPrioridad(), 
+            ejec.getTiempoLimite(),
+            ejec.getPc(),     
+            ejec.getMar(),    
+            ejec.getMemoriaMb(),
+            "Ejecución "
+            
+        
+        });
+    }
+     
+    
     datastructura.Nodo aux = colaListos.getInicio(); 
     while (aux != null) {
         clases.Proceso p = aux.getDato();
@@ -314,51 +316,7 @@ private int memoriaUsadaActual = 0;
     }
 
     // que proceso se esta ejecutando
-    if (procesoEnEjecucion != null) {
-        modelo.addRow(new Object[]{
-            procesoEnEjecucion.getId(), 
-            procesoEnEjecucion.getNombre(), 
-            procesoEnEjecucion.getInstruccionesTotales(), 
-            procesoEnEjecucion.getPrioridad(), 
-            procesoEnEjecucion.getTiempoLimite(),
-            procesoEnEjecucion.getPc(),
-            procesoEnEjecucion.getMar(),
-            procesoEnEjecucion.getMemoriaMb(),
-            procesoEnEjecucion.getEstado()
-        });
-    }
-}
-
-    public void ejecutarProcesador() {
-    if (procesoEnEjecucion == null) {
-        procesoEnEjecucion = colaListos.eliminarPrimero();
-        if (procesoEnEjecucion != null) {
-            procesoEnEjecucion.setEstado("Ejecución");
-            actualizarTabla();
-            escribirLog("Satélite inició: " + procesoEnEjecucion.getNombre() + " [Prioridad " + procesoEnEjecucion.getPrioridad() + "]");
-        }
-    } else {
-        //  Verifico Deadline 
-        if (segundosMision > procesoEnEjecucion.getTiempoLimite()) {
-            escribirLog("¡FALLO CRÍTICO! Deadline superado en: " + procesoEnEjecucion.getNombre());
-            procesoEnEjecucion.setEstado("FALLIDO");
-            procesoEnEjecucion = null;
-            actualizarTabla();
-            return;
-        }
-
-       
-        procesoEnEjecucion.ejecutarCiclo();
-        
-       
-        if (procesoEnEjecucion.getInstruccionesTotales() <= 0) {
-            escribirLog("ÉXITO: " + procesoEnEjecucion.getNombre() + " completó su misión.");
-            procesoEnEjecucion.setEstado("Terminado");
-            procesoEnEjecucion = null;
-        }
-        
-        actualizarTabla();
-    }
+   
 }
     
     public void escribirLog(String mensaje) {
