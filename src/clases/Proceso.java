@@ -49,6 +49,11 @@ public class Proceso {
         this.pc++;
         this.mar++;
         this.instruccionesTotales--;
+        this.tiempoLimite--;
+        
+        if(this.tiempoLimite < 0){
+            //error deadline
+        }
     }
 
     // --- Getters ---
