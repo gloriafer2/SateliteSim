@@ -23,7 +23,6 @@ datastructura.ListaEnlazada colaSuspendidos = new datastructura.ListaEnlazada();
 
 int segundosMision = 0;
 private int contadorGlobal = 1; // Para que P1, P2... funcionen
-private int memoriaUsada = 0;  
 private Semaphore semaforoGlobal = new Semaphore(1);
 private CPUThread cpu;
 // Para llevar el control de los 200MB de RAM
@@ -38,9 +37,9 @@ private int memoriaUsadaActual = 0;
 
     public VentanaPrincipal() {
         initComponents();
-        // Inicializamos el hilo externo pasándole las listas que ya tienes y el semáforo
-        cpu = new CPUThread(colaListos, colaBloqueados, semaforoGlobal);
-        cpu.start(); // El motor empieza a buscar procesos en colaListos
+       
+        cpu = new CPUThread(colaListos, colaBloqueados, semaforoGlobal, this);
+        cpu.start(); 
         
         new javax.swing.Timer(1000, (e) ->{
             actualizarTabla();
@@ -185,10 +184,10 @@ private int memoriaUsadaActual = 0;
                 clases.Proceso nuevo = new clases.Proceso(id, nombre, instrucciones, prioridad, deadline);
                 nuevo.setEstado("Nuevo");
                 // cabe en ram
-                if (memoriaUsada + memoriaMB <= 200) { 
+                if (memoriaUsadaActual + memoriaMB <= 200) { 
                     nuevo.setEstado("Listo");
                     colaListos.agregar(nuevo); 
-                    memoriaUsada += memoriaMB;
+                    memoriaUsadaActual += memoriaMB;
                     escribirLog("ADMITIDO: " + nombre + " en RAM (" + memoriaMB + "MB)");
                 } else {
                     // Si no cabe, se va a la cola de Suspendidos
@@ -323,6 +322,25 @@ private int memoriaUsadaActual = 0;
    txtLog.append("[" + segundosMision + "s] " + mensaje + "\n");
      txtLog.setCaretPosition( txtLog.getDocument().getLength());
 }
+    public void liberarMemoriaYRevisarSuspendidos(int memoriaLiberada) {
+    memoriaUsadaActual -= memoriaLiberada;
+    escribirLog("RAM: Se liberaron " + memoriaLiberada + "MB. actual: " + memoriaUsadaActual + "/200MB");
+
+    if (!colaSuspendidos.estaVacia()) {
+        clases.Proceso pS = colaSuspendidos.getInicio().getDato();
+        
+        if (memoriaUsadaActual + pS.getMemoriaMb() <= MAX_MEMORIA_RAM) {
+            colaSuspendidos.eliminarPrimero();
+            pS.setEstado("Listo");
+            colaListos.agregar(pS);
+            memoriaUsadaActual += pS.getMemoriaMb();
+            escribirLog("SWAP: " + pS.getNombre() + " movido a RAM.");
+            
+            ordenarColaPorPrioridad(colaListos);
+        }
+    }
+    actualizarTabla(); // Para que se vea el cambio inmediatamente
+  }
 }
 
 
