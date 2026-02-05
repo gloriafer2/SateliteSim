@@ -6,7 +6,7 @@ package logic;
 
 import clases.Proceso;
 import datastructura.ListaEnlazada;
-import java.util.concurrent.Semaphore; // Esta librería SÍ está permitida
+import java.util.concurrent.Semaphore; 
 
 public class CPUThread extends Thread {
     private ListaEnlazada colaListos;
@@ -14,11 +14,13 @@ public class CPUThread extends Thread {
     private Proceso procesoEnEjecucion;
     private Semaphore semaforoCPU; // Para exclusión mutua y control de interrupciones
     private boolean interrupcionActiva = false;
-
-    public CPUThread(ListaEnlazada listos, ListaEnlazada bloqueados, Semaphore sem) {
+    private gui.VentanaPrincipal ventana;
+    
+    public CPUThread(ListaEnlazada listos, ListaEnlazada bloqueados, Semaphore sem, gui.VentanaPrincipal ventana) {
         this.colaListos = listos;
         this.colaBloqueados = bloqueados;
         this.semaforoCPU = sem;
+        this.ventana = ventana;
     }
     
     
@@ -44,6 +46,9 @@ public class CPUThread extends Thread {
                     
                     if (procesoEnEjecucion.getInstruccionesTotales() <= 0) {
                         procesoEnEjecucion.setEstado("Terminado");
+                        
+                        ventana.escribirLog("Exito: " + procesoEnEjecucion.getNombre() + " completo su mision.");
+                        ventana.liberarMemoriaYRevisarSuspendidos(procesoEnEjecucion.getMemoriaMb());
                         procesoEnEjecucion = null;
                     }
                 }
@@ -60,7 +65,7 @@ public class CPUThread extends Thread {
     private void manejarInterrupcion() {
         if (procesoEnEjecucion != null) {
             procesoEnEjecucion.setEstado("Bloqueado");
-            colaBloqueados.agregar(procesoEnEjecucion); // Lo movemos a tu lista manual de bloqueados
+            colaBloqueados.agregar(procesoEnEjecucion); 
             procesoEnEjecucion = null;
         }
         interrupcionActiva = false;
