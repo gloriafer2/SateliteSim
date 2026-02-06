@@ -41,6 +41,7 @@ public class Proceso {
         this.memoriaMb = (int)(Math.random() * 50) + 10;
         this.ciclosBloqueo = 0;
     }
+    
 
     /**
      * "El PC y el MAR incrementarán una unidad por cada ciclo del reloj."
@@ -67,7 +68,9 @@ public class Proceso {
     public int getMar() { return mar; }
     public int getMemoriaMb() { return memoriaMb; }
     public int getCiclosBloqueo() { return ciclosBloqueo; }
+    public int getDeadline(){return tiempoLimite;}
 
+    
     // --- Setters ---
     public void setEstado(String estado) { this.estado = estado; }
     public void setPc(int pc) { this.pc = pc; }

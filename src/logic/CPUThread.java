@@ -44,13 +44,24 @@ public class CPUThread extends Thread {
                     // Ejecuta un ciclo (incrementa PC, MAR y baja instrucciones/deadline)
                     procesoEnEjecucion.ejecutarCiclo();
                     
-                    if (procesoEnEjecucion.getInstruccionesTotales() <= 0) {
-                        procesoEnEjecucion.setEstado("Terminado");
-                        
-                        ventana.escribirLog("Exito: " + procesoEnEjecucion.getNombre() + " completo su mision.");
+                     if (ventana.getSegundosMision() > procesoEnEjecucion.getDeadline()){
+                         procesoEnEjecucion.setEstado("FALLIDO");
+                         ventana.escribirLog("ALERTA: "+ procesoEnEjecucion.getNombre() + "abortado por Deadline.");
+                         
+                         ventana.liberarMemoriaYRevisarSuspendidos(procesoEnEjecucion.getMemoriaMb());
+                         procesoEnEjecucion = null;
+                         
+   
+                     }
+                    
+                     else if (procesoEnEjecucion.getInstruccionesTotales() <= 0){
+                         procesoEnEjecucion.setEstado("Terminado");
+                         ventana.escribirLog("Exito: " + procesoEnEjecucion.getNombre() + " completo su mision.");
+
                         ventana.liberarMemoriaYRevisarSuspendidos(procesoEnEjecucion.getMemoriaMb());
                         procesoEnEjecucion = null;
-                    }
+                     }
+                   
                 }
 
                 semaforoCPU.release();
