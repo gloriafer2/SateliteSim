@@ -19,6 +19,49 @@ public class ListaEnlazada {
     
     public boolean estaVacia() {
     return inicio == null;
+    
+    
+}
+    
+        public void vaciar() {
+        this.inicio = null; // Al quitar la referencia al primer nodo, Java limpia el resto
+        // Si tienes un contador de tamaño en tu lista, ponlo a 0 aquí también
+    }
+        
+        
+      public void eliminarProcesoEspecifico(clases.Proceso procesoABuscar) {
+    if (inicio == null) return;
+
+    // Si es el primero
+    if (inicio.getDato().equals(procesoABuscar)) {
+        inicio = inicio.getSiguiente();
+        return;
+    }
+
+    datastructura.Nodo anterior = inicio;
+    datastructura.Nodo actual = inicio.getSiguiente();
+
+    while (actual != null) {
+        if (actual.getDato().equals(procesoABuscar)) {
+            anterior.setSiguiente(actual.getSiguiente());
+            return;
+        }
+        anterior = actual;
+        actual = actual.getSiguiente();
+    }
+}
+      
+      
+      public boolean contiene(clases.Proceso p) {
+        Nodo aux = inicio;
+        while (aux != null) {
+            // Comparamos por el nombre o el ID único del proceso
+            if (aux.getDato().getNombre().equals(p.getNombre())) {
+                return true; // Si lo encuentra, devuelve verdadero
+            }
+            aux = aux.getSiguiente();
+        }
+        return false; // Si termina el ciclo y no lo vio, es falso
 }
 
     /**
@@ -76,4 +119,65 @@ public class ListaEnlazada {
     public Nodo getInicio() {
         return inicio; 
     }
+    
+    
+    
+
+    public void ordenarPorTiempoRestante() { // Para SRT
+        if (inicio == null || inicio.getSiguiente() == null) return;
+        boolean huboCambio;
+        do {
+            huboCambio = false;
+            Nodo actual = inicio;
+            while (actual.getSiguiente() != null) {
+                // Comparamos instrucciones restantes
+                if (actual.getDato().getInstruccionesTotales() > actual.getSiguiente().getDato().getInstruccionesTotales()) {
+                    Proceso temp = actual.getDato();
+                    actual.setDato(actual.getSiguiente().getDato());
+                    actual.getSiguiente().setDato(temp);
+                    huboCambio = true;
+                }
+                actual = actual.getSiguiente();
+            }
+        } while (huboCambio);
+    }
+
+    public void ordenarPorPrioridad() { // Para Prioridad Estática
+        if (inicio == null || inicio.getSiguiente() == null) return;
+        boolean huboCambio;
+        do {
+            huboCambio = false;
+            Nodo actual = inicio;
+            while (actual.getSiguiente() != null) {
+                // 1 es mayor prioridad que 2, por eso ordenamos de menor a mayor
+                if (actual.getDato().getPrioridad() > actual.getSiguiente().getDato().getPrioridad()) {
+                    Proceso temp = actual.getDato();
+                    actual.setDato(actual.getSiguiente().getDato());
+                    actual.getSiguiente().setDato(temp);
+                    huboCambio = true;
+                }
+                actual = actual.getSiguiente();
+            }
+        } while (huboCambio);
+    }
+
+    public void ordenarPorDeadline() { // Para EDF
+        if (inicio == null || inicio.getSiguiente() == null) return;
+        boolean huboCambio;
+        do {
+            huboCambio = false;
+            Nodo actual = inicio;
+            while (actual.getSiguiente() != null) {
+                // El que tiene el tiempo limite más pequeño va de primero
+                if (actual.getDato().getTiempoLimite() > actual.getSiguiente().getDato().getTiempoLimite()) {
+                    Proceso temp = actual.getDato();
+                    actual.setDato(actual.getSiguiente().getDato());
+                    actual.getSiguiente().setDato(temp);
+                    huboCambio = true;
+                }
+                actual = actual.getSiguiente();
+            }
+        } while (huboCambio);
+    }
+
 }

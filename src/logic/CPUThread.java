@@ -15,6 +15,7 @@ public class CPUThread extends Thread {
     private Semaphore semaforoCPU; // Para exclusión mutua y control de interrupciones
     private boolean interrupcionActiva = false;
     private gui.VentanaPrincipal ventana;
+    private int quantumRestante;
     
     public CPUThread(ListaEnlazada listos, ListaEnlazada bloqueados, Semaphore sem, gui.VentanaPrincipal ventana) {
         this.colaListos = listos;
@@ -28,49 +29,79 @@ public class CPUThread extends Thread {
     @Override
     public void run() {
         while (true) {
-            try {
-                // El semáforo garantiza que solo un hilo acceda a las colas a la vez
-                semaforoCPU.acquire();
+                try {
+                    semaforoCPU.acquire();
 
-                if (interrupcionActiva) {
-                    manejarInterrupcion();
-                } else if (procesoEnEjecucion == null && !colaListos.estaVacia()) {
-                    // Sacamos el proceso de tu lista manual
-                    procesoEnEjecucion = colaListos.eliminarPrimero();
-                    procesoEnEjecucion.setEstado("Ejecucion");
-                }
+                    // 1. GESTIÓN DE INTERRUPCIÓN (Botón Impacto)
+                    if (interrupcionActiva) {
+                        manejarInterrupcion(); // Este método ahora será inteligente
+                    } 
 
-                if (procesoEnEjecucion != null) {
-                    // Ejecuta un ciclo (incrementa PC, MAR y baja instrucciones/deadline)
-                    procesoEnEjecucion.ejecutarCiclo();
-                    
-                    if (procesoEnEjecucion.getInstruccionesTotales() <= 0) {
-                        procesoEnEjecucion.setEstado("Terminado");
-                        
-                        ventana.escribirLog("Exito: " + procesoEnEjecucion.getNombre() + " completo su mision.");
-                        ventana.liberarMemoriaYRevisarSuspendidos(procesoEnEjecucion.getMemoriaMb());
-                        procesoEnEjecucion = null;
+                    // 2. ASIGNACIÓN DE NUEVO PROCESO
+                    else if (procesoEnEjecucion == null && !colaListos.estaVacia()) {
+                        procesoEnEjecucion = colaListos.eliminarPrimero();
+                        procesoEnEjecucion.setEstado("Ejecucion");
+                        this.quantumRestante = ventana.getQuantumGlobal();
+
+                        ventana.escribirLog("CPU: " + procesoEnEjecucion.getNombre() + 
+                           " inicia ejecución (Algoritmo: " + ventana.getAlgoritmoActual() + ")");
                     }
+
+                    // 3. EJECUCIÓN DEL CICLO
+                    if (procesoEnEjecucion != null) {
+                        procesoEnEjecucion.ejecutarCiclo();
+
+                        // --- Validar Deadline (Aborto) ---
+                        if (ventana.getSegundosMision() > procesoEnEjecucion.getDeadline() + 10){
+                            procesoEnEjecucion.setEstado("FALLIDO");
+                            ventana.escribirLog("ALERTA: "+ procesoEnEjecucion.getNombre() + " abortado por Deadline.");
+                            ventana.liberarMemoriaYRevisarSuspendidos(procesoEnEjecucion);
+                            procesoEnEjecucion = null;
+                        } 
+                        // --- Validar Finalización ---
+                        else if (procesoEnEjecucion.getInstruccionesTotales() <= 0){
+                            procesoEnEjecucion.setEstado("Terminado");
+                            ventana.escribirLog("Exito: " + procesoEnEjecucion.getNombre() + " completó su misión.");
+                            ventana.liberarMemoriaYRevisarSuspendidos(procesoEnEjecucion);
+                            procesoEnEjecucion = null;
+                        }
+                        // --- Validar Round Robin ---
+                        else if (ventana.getAlgoritmoActual().equals("Round Robin")){
+                            quantumRestante--;
+                            if(quantumRestante <= 0){
+                                procesoEnEjecucion.setEstado("Listo");
+                                colaListos.agregar(procesoEnEjecucion);
+                                ventana.escribirLog("Round Robin: " + procesoEnEjecucion.getNombre() + " vuelve a la cola por Quantum.");
+                                procesoEnEjecucion = null;
+                            }
+                        }
+                    }
+
+                    semaforoCPU.release();
+                    Thread.sleep(200); 
+
+                } catch (InterruptedException e) {
+                    System.out.println("Error en el CPU: " + e.getMessage());
                 }
-
-                semaforoCPU.release();
-                Thread.sleep(1000); // Simula el ciclo de reloj del satélite
-
-            } catch (InterruptedException e) {
-                System.out.println("Error en el CPU: " + e.getMessage());
             }
-        }
     }
 
     private void manejarInterrupcion() {
         if (procesoEnEjecucion != null) {
-            procesoEnEjecucion.setEstado("Bloqueado");
-            colaBloqueados.agregar(procesoEnEjecucion); 
-            procesoEnEjecucion = null;
+            // Si el botón ya lo puso en "Bloqueado", el CPU NO lo agrega a ninguna cola.
+            // Solo limpia la referencia para que el CPU quede libre.
+            if (procesoEnEjecucion.getEstado().equals("Bloqueado")) {
+                procesoEnEjecucion = null; 
+            } else {
+                // Si la interrupción fue por otra cosa, se guarda normalmente
+                procesoEnEjecucion.setEstado("Listo");
+                colaListos.agregar(procesoEnEjecucion);
+                procesoEnEjecucion = null;
+            }
         }
-        interrupcionActiva = false;
-    }
-
+        this.interrupcionActiva = false; // Resetear la bandera
+        ventana.actualizarTablas();
+}
     public void activarInterrupcion() {
         this.interrupcionActiva = true;
     }
@@ -78,4 +109,17 @@ public class CPUThread extends Thread {
     public Proceso getProcesoEnEjecucion(){
         return this.procesoEnEjecucion;
     }
+
+    public void setProcesoEnEjecucion(Object object) {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    }
+    public void detenerProcesoInmediatamente() {
+    if (this.procesoEnEjecucion != null) {
+        // Al ponerlo en null aquí, el if (procesoEnEjecucion != null) 
+        // del método run() dejará de ejecutarlo al instante.
+        this.procesoEnEjecucion = null;
+        this.interrupcionActiva = false; // Reset de bandera
+    }
+}
+    
 }
