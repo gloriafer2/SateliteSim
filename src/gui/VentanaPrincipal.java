@@ -290,6 +290,9 @@ public int getSegundosMision(){
                 btnInterrupcionActionPerformed(evt);
             }
         });
+        jScrollPane4.setViewportView(tblSwap);
+
+        jLabel1.setText("Procesos en Disco");
 
         btnGenerar.setText("Generar 20 Procesos");
         btnGenerar.addActionListener(new java.awt.event.ActionListener() {
@@ -419,6 +422,20 @@ public int getSegundosMision(){
                         .addComponent(jScrollPane5, javax.swing.GroupLayout.PREFERRED_SIZE, 232, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addContainerGap(409, Short.MAX_VALUE))
         );
+
+        btnInterrupcion.setText("SIMULAR IMPACTO");
+        btnInterrupcion.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnInterrupcionActionPerformed(evt);
+            }
+        });
+
+        btnGenerar.setText("Generar 20 Procesos");
+        btnGenerar.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnGenerarActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -578,7 +595,6 @@ public int getSegundosMision(){
     private javax.swing.JLabel jLabel3;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JScrollPane jScrollPane4;
     private javax.swing.JScrollPane jScrollPane5;

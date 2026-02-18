@@ -41,6 +41,7 @@ public class Proceso {
         this.memoriaMb = (int)(Math.random() * 50) + 10;
         this.ciclosBloqueo = 0;
     }
+    
 
         public void setDeadline(int deadline) {
         this.tiempoLimite = deadline;
