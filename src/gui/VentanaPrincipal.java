@@ -9,6 +9,11 @@ import datastructura.ListaEnlazada;
 import java.util.concurrent.Semaphore;
 import javax.swing.table.DefaultTableModel;
 import logic.CPUThread;
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.JFreeChart;
+import org.jfree.data.general.DefaultPieDataset;
+import java.awt.BorderLayout;
 
 
 
@@ -21,9 +26,20 @@ public class VentanaPrincipal extends javax.swing.JFrame {
 datastructura.ListaEnlazada colaListos = new datastructura.ListaEnlazada();
 datastructura.ListaEnlazada colaBloqueados = new datastructura.ListaEnlazada();
 datastructura.ListaEnlazada colaSuspendidos = new datastructura.ListaEnlazada();
+private int procesosExitosos = 0;
+private int procesosFallidos = 0;
 String algoritmoActual = "FCFS";
 
 
+public void sumarExito() {
+        this.procesosExitosos++;
+        actualizarGrafica(); 
+    }
+
+    public void sumarFallo() {
+        this.procesosFallidos++;
+        actualizarGrafica();
+    }
 
 int segundosMision = 0;
 private int contadorGlobal = 1; // Para que P1, P2... funcionen
@@ -177,6 +193,7 @@ public int getSegundosMision(){
         btnGenerar = new javax.swing.JButton();
         jScrollPane1 = new javax.swing.JScrollPane();
         tblCPU = new javax.swing.JTable();
+        panelGrafica = new javax.swing.JPanel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -341,6 +358,9 @@ public int getSegundosMision(){
 
         jPanel1.add(jScrollPane1, new org.netbeans.lib.awtextra.AbsoluteConstraints(400, 480, 310, 100));
 
+        panelGrafica.setLayout(new java.awt.BorderLayout());
+        jPanel1.add(panelGrafica, new org.netbeans.lib.awtextra.AbsoluteConstraints(420, 620, 300, 190));
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -352,8 +372,8 @@ public int getSegundosMision(){
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 131, Short.MAX_VALUE))
+                .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, 830, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(0, 0, Short.MAX_VALUE))
         );
 
         pack();
@@ -515,6 +535,7 @@ public int getSegundosMision(){
     private javax.swing.JScrollPane jScrollPane4;
     private javax.swing.JScrollPane jScrollPane5;
     private javax.swing.JLabel lblReloj;
+    private javax.swing.JPanel panelGrafica;
     private javax.swing.JScrollPane tbListos;
     private javax.swing.JTable tblBloqueados;
     private javax.swing.JTable tblCPU;
@@ -661,7 +682,29 @@ public int getSegundosMision(){
         }
         actualizarTablas();
     }
+        
+    
+    public void actualizarGrafica() {
+        // 1. Datos
+        DefaultPieDataset dataset = new DefaultPieDataset();
+        dataset.setValue("Misión Exitosa", procesosExitosos);
+        dataset.setValue("Fallo de Deadline", procesosFallidos);
 
+        // 2. Crear Gráfica
+        JFreeChart chart = ChartFactory.createPieChart(
+                "RENDIMIENTO DEL SATÉLITE", 
+                dataset, 
+                true, true, false);
+
+        // 3. Mostrar en el panel
+        ChartPanel chartPanel = new ChartPanel(chart);
+        panelGrafica.removeAll();
+        panelGrafica.add(chartPanel, java.awt.BorderLayout.CENTER);
+
+        // 4. Refrescar
+        panelGrafica.revalidate();
+        panelGrafica.repaint();
+    }
     
     
     

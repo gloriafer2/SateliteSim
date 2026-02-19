@@ -12,7 +12,7 @@ public class CPUThread extends Thread {
     private ListaEnlazada colaListos;
     private ListaEnlazada colaBloqueados;
     private Proceso procesoEnEjecucion;
-    private Semaphore semaforoCPU; // Para exclusión mutua y control de interrupciones
+    private Semaphore semaforoCPU; 
     private boolean interrupcionActiva = false;
     private gui.VentanaPrincipal ventana;
     private int quantumRestante;
@@ -23,8 +23,6 @@ public class CPUThread extends Thread {
         this.semaforoCPU = sem;
         this.ventana = ventana;
     }
-    
-    
 
     @Override
     public void run() {
@@ -34,7 +32,7 @@ public class CPUThread extends Thread {
 
                     // 1. GESTIÓN DE INTERRUPCIÓN (Botón Impacto)
                     if (interrupcionActiva) {
-                        manejarInterrupcion(); // Este método ahora será inteligente
+                        manejarInterrupcion(); 
                     } 
 
                     // 2. ASIGNACIÓN DE NUEVO PROCESO
@@ -46,21 +44,25 @@ public class CPUThread extends Thread {
                         ventana.escribirLog("CPU: " + procesoEnEjecucion.getNombre() + 
                            " inicia ejecución (Algoritmo: " + ventana.getAlgoritmoActual() + ")");
                     }
-
+                    
                     // 3. EJECUCIÓN DEL CICLO
                     if (procesoEnEjecucion != null) {
                         procesoEnEjecucion.ejecutarCiclo();
 
                         // --- Validar Deadline (Aborto) ---
-                        if (ventana.getSegundosMision() > procesoEnEjecucion.getDeadline() + 10){
+                        // Aquí sumamos un FALLO a la gráfica
+                        if (procesoEnEjecucion.getDeadline()<= 0){
                             procesoEnEjecucion.setEstado("FALLIDO");
+                            ventana.sumarFallo(); // <--- NUEVO: Actualiza la gráfica
                             ventana.escribirLog("ALERTA: "+ procesoEnEjecucion.getNombre() + " abortado por Deadline.");
                             ventana.liberarMemoriaYRevisarSuspendidos(procesoEnEjecucion);
                             procesoEnEjecucion = null;
                         } 
                         // --- Validar Finalización ---
+                        // Aquí sumamos un ÉXITO a la gráfica
                         else if (procesoEnEjecucion.getInstruccionesTotales() <= 0){
                             procesoEnEjecucion.setEstado("Terminado");
+                            ventana.sumarExito(); // <--- NUEVO: Actualiza la gráfica
                             ventana.escribirLog("Exito: " + procesoEnEjecucion.getNombre() + " completó su misión.");
                             ventana.liberarMemoriaYRevisarSuspendidos(procesoEnEjecucion);
                             procesoEnEjecucion = null;
@@ -88,20 +90,19 @@ public class CPUThread extends Thread {
 
     private void manejarInterrupcion() {
         if (procesoEnEjecucion != null) {
-            // Si el botón ya lo puso en "Bloqueado", el CPU NO lo agrega a ninguna cola.
-            // Solo limpia la referencia para que el CPU quede libre.
             if (procesoEnEjecucion.getEstado().equals("Bloqueado")) {
                 procesoEnEjecucion = null; 
             } else {
-                // Si la interrupción fue por otra cosa, se guarda normalmente
                 procesoEnEjecucion.setEstado("Listo");
                 colaListos.agregar(procesoEnEjecucion);
+                colaListos.ordenarPorDeadline();
                 procesoEnEjecucion = null;
             }
         }
-        this.interrupcionActiva = false; // Resetear la bandera
+        this.interrupcionActiva = false; 
         ventana.actualizarTablas();
-}
+    }
+
     public void activarInterrupcion() {
         this.interrupcionActiva = true;
     }
@@ -111,15 +112,13 @@ public class CPUThread extends Thread {
     }
 
     public void setProcesoEnEjecucion(Object object) {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        // Mantenemos esto por compatibilidad, aunque no se use
     }
+
     public void detenerProcesoInmediatamente() {
-    if (this.procesoEnEjecucion != null) {
-        // Al ponerlo en null aquí, el if (procesoEnEjecucion != null) 
-        // del método run() dejará de ejecutarlo al instante.
-        this.procesoEnEjecucion = null;
-        this.interrupcionActiva = false; // Reset de bandera
+        if (this.procesoEnEjecucion != null) {
+            this.procesoEnEjecucion = null;
+            this.interrupcionActiva = false; 
+        }
     }
-}
-    
 }
