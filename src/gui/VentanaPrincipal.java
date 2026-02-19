@@ -83,6 +83,21 @@ public int getSegundosMision(){
 
     }
     
+    
+            public void actualizarModoSistema(String modo) {
+            lblModo.setText("MODO: " + modo);
+            if (modo.equals("KERNEL")) {
+                lblModo.setForeground(java.awt.Color.RED); // Rojo para alertar que el SO tiene el control
+            } else {
+                lblModo.setForeground(java.awt.Color.BLUE); // Azul para ejecución normal
+            }
+        }
+
+        // Método para que el CPU sepa cuánto tiempo dormir
+        public int getRetrasoSimulacion() {
+            return sldVelocidad.getValue();
+        }
+    
         public void gestionarTransicionesDeColas() {
         // CASO RAM: Revisar si alguien en Bloqueados ya pasó a "Listo"
             datastructura.Nodo auxB = colaBloqueados.getInicio();
@@ -194,6 +209,8 @@ public int getSegundosMision(){
         jScrollPane1 = new javax.swing.JScrollPane();
         tblCPU = new javax.swing.JTable();
         panelGrafica = new javax.swing.JPanel();
+        lblModo = new javax.swing.JLabel();
+        sldVelocidad = new javax.swing.JSlider();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -360,6 +377,14 @@ public int getSegundosMision(){
 
         panelGrafica.setLayout(new java.awt.BorderLayout());
         jPanel1.add(panelGrafica, new org.netbeans.lib.awtextra.AbsoluteConstraints(420, 620, 300, 190));
+
+        lblModo.setText("Modo:Usuario");
+        jPanel1.add(lblModo, new org.netbeans.lib.awtextra.AbsoluteConstraints(440, 100, 120, -1));
+
+        sldVelocidad.setMaximum(2000);
+        sldVelocidad.setMinimum(100);
+        sldVelocidad.setValue(500);
+        jPanel1.add(sldVelocidad, new org.netbeans.lib.awtextra.AbsoluteConstraints(560, 20, -1, -1));
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -534,8 +559,10 @@ public int getSegundosMision(){
     private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JScrollPane jScrollPane4;
     private javax.swing.JScrollPane jScrollPane5;
+    private javax.swing.JLabel lblModo;
     private javax.swing.JLabel lblReloj;
     private javax.swing.JPanel panelGrafica;
+    private javax.swing.JSlider sldVelocidad;
     private javax.swing.JScrollPane tbListos;
     private javax.swing.JTable tblBloqueados;
     private javax.swing.JTable tblCPU;
