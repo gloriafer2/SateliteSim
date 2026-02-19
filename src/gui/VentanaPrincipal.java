@@ -425,25 +425,39 @@ public int getSegundosMision(){
     } while (intercambio);
 }
     private void btnInterrupcionActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnInterrupcionActionPerformed
-       clases.Proceso p = cpu.getProcesoEnEjecucion(); 
-
-        if (p != null) {
-            // 1. Forzamos al CPU a soltarlo ANTES de moverlo a la lista
-            cpu.detenerProcesoInmediatamente(); 
-
-            p.setEstado("Bloqueado");
-
-            // 2. Movimiento atómico
-            if (!colaBloqueados.contiene(p)) {
-                colaBloqueados.agregar(p);
+       // Creamos un hilo anónimo para cumplir con el requisito de "Thread independiente"
+    Thread hiloInterrupcion = new Thread(() -> {
+        try {
+            // 1. Log inicial
+            escribirLog("ALERTA: ¡Colisión inminente detectada!");
+            
+            // 2. Simulamos un pequeño retraso del hardware (opcional, da realismo)
+            Thread.sleep(500); 
+            
+            // 3. Accedemos al semáforo para detener el CPU de forma segura
+            semaforoGlobal.acquire(); 
+            
+            clases.Proceso p = cpu.getProcesoEnEjecucion();
+            if (p != null) {
+                cpu.detenerProcesoInmediatamente(); // Tu método actual
+                p.setEstado("Bloqueado");
+                
+                if (!colaBloqueados.contiene(p)) {
+                    colaBloqueados.agregar(p);
+                }
+                escribirLog("INTERRUPCIÓN: " + p.getNombre() + " evacuado a Bloqueados.");
+                
+                // Actualizamos GUI desde el hilo de eventos para evitar errores
+                javax.swing.SwingUtilities.invokeLater(() -> actualizarTablas());
             }
-
-            escribirLog("EXTRAÍDO: " + p.getNombre() + " movido a Bloqueados.");
-
-            // 3. Limpiamos la referencia local y refrescamos
-            this.procesoEnEjecucion = null; 
-            actualizarTablas();
+            semaforoGlobal.release();
+            
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
+    });
+    
+    hiloInterrupcion.start(); // ¡Iniciamos el hilo!
     }//GEN-LAST:event_btnInterrupcionActionPerformed
 
     private void cbxAlgoritmosActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cbxAlgoritmosActionPerformed
