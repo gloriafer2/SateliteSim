@@ -29,6 +29,17 @@ public class CPUThread extends Thread {
         while (true) {
                 try {
                     semaforoCPU.acquire();
+                    if (interrupcionActiva || procesoEnEjecucion == null) {
+                        // Si hay interrupción o el CPU está buscando procesos, el SO tiene el control
+                        ventana.actualizarModoSistema("KERNEL"); 
+                    } else {
+                        // Si hay un proceso corriendo, es tiempo del usuario
+                        ventana.actualizarModoSistema("USUARIO");
+                    }
+                    
+                    
+                    
+                    
 
                     // 1. GESTIÓN DE INTERRUPCIÓN (Botón Impacto)
                     if (interrupcionActiva) {
@@ -89,6 +100,7 @@ public class CPUThread extends Thread {
     }
 
     private void manejarInterrupcion() {
+        ventana.actualizarModoSistema("KERNEL");
         if (procesoEnEjecucion != null) {
             if (procesoEnEjecucion.getEstado().equals("Bloqueado")) {
                 procesoEnEjecucion = null; 
