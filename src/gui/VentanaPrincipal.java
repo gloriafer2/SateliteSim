@@ -199,7 +199,6 @@ public int getSegundosMision(){
         txtLog = new javax.swing.JTextArea();
         jScrollPane4 = new javax.swing.JScrollPane();
         tblSwapListos = new javax.swing.JTable();
-        jLabel1 = new javax.swing.JLabel();
         cbxAlgoritmos = new javax.swing.JComboBox<>();
         jLabel2 = new javax.swing.JLabel();
         txtQuantum = new javax.swing.JTextField();
@@ -214,14 +213,26 @@ public int getSegundosMision(){
         panelGrafica = new javax.swing.JPanel();
         lblModo = new javax.swing.JLabel();
         sldVelocidad = new javax.swing.JSlider();
+        jLabel3 = new javax.swing.JLabel();
+        jLabel8 = new javax.swing.JLabel();
+        jLabel9 = new javax.swing.JLabel();
+        jLabel10 = new javax.swing.JLabel();
+        jLabel11 = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
+        jPanel1.setBackground(new java.awt.Color(0, 51, 51));
         jPanel1.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
+        lblReloj.setFont(new java.awt.Font("OCR A Extended", 1, 14)); // NOI18N
+        lblReloj.setForeground(new java.awt.Color(255, 255, 255));
         lblReloj.setText("Reloj de Misión: 00:00");
-        jPanel1.add(lblReloj, new org.netbeans.lib.awtextra.AbsoluteConstraints(16, 73, -1, -1));
+        jPanel1.add(lblReloj, new org.netbeans.lib.awtextra.AbsoluteConstraints(840, 20, -1, -1));
 
+        tbListos.setBackground(new java.awt.Color(0, 153, 153));
+        tbListos.setBorder(new javax.swing.border.LineBorder(new java.awt.Color(0, 0, 0), 5, true));
+
+        tblListos.setBackground(new java.awt.Color(0, 153, 153));
         tblListos.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
                 {null, null, null, null, null, null, null, null, null},
@@ -243,14 +254,16 @@ public int getSegundosMision(){
         });
         tbListos.setViewportView(tblListos);
 
-        jPanel1.add(tbListos, new org.netbeans.lib.awtextra.AbsoluteConstraints(6, 101, 394, 249));
+        jPanel1.add(tbListos, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 110, 394, 249));
 
         txtLog.setColumns(20);
         txtLog.setRows(5);
+        txtLog.setBorder(javax.swing.BorderFactory.createCompoundBorder());
         jScrollPane3.setViewportView(txtLog);
 
-        jPanel1.add(jScrollPane3, new org.netbeans.lib.awtextra.AbsoluteConstraints(406, 130, 331, 232));
+        jPanel1.add(jScrollPane3, new org.netbeans.lib.awtextra.AbsoluteConstraints(410, 100, 331, 232));
 
+        tblSwapListos.setBackground(new java.awt.Color(0, 153, 153));
         tblSwapListos.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
                 {null, null, null, null, null},
@@ -281,10 +294,10 @@ public int getSegundosMision(){
 
         jPanel1.add(jScrollPane4, new org.netbeans.lib.awtextra.AbsoluteConstraints(31, 438, 324, 207));
 
-        jLabel1.setText("Suspendidos");
-        jPanel1.add(jLabel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(54, 404, 106, -1));
-
+        cbxAlgoritmos.setBackground(new java.awt.Color(153, 204, 255));
         cbxAlgoritmos.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "FCFS", "Round Robin", "SRT", "Prioridad Estatica", "EDF" }));
+        cbxAlgoritmos.setAutoscrolls(true);
+        cbxAlgoritmos.setBorder(javax.swing.BorderFactory.createEtchedBorder(new java.awt.Color(0, 204, 204), null));
         cbxAlgoritmos.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 cbxAlgoritmosActionPerformed(evt);
@@ -296,6 +309,7 @@ public int getSegundosMision(){
         jPanel1.add(jLabel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(215, 25, 63, -1));
         jPanel1.add(txtQuantum, new org.netbeans.lib.awtextra.AbsoluteConstraints(284, 22, 71, -1));
 
+        tblBloqueados.setBackground(new java.awt.Color(0, 102, 102));
         tblBloqueados.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
                 {null, null, null, null},
@@ -317,8 +331,9 @@ public int getSegundosMision(){
         });
         jScrollPane2.setViewportView(tblBloqueados);
 
-        jPanel1.add(jScrollPane2, new org.netbeans.lib.awtextra.AbsoluteConstraints(778, 59, 295, 120));
+        jPanel1.add(jScrollPane2, new org.netbeans.lib.awtextra.AbsoluteConstraints(770, 110, 295, 120));
 
+        tblSwapBloqueados.setBackground(new java.awt.Color(0, 153, 153));
         tblSwapBloqueados.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
                 {null, null, null},
@@ -337,13 +352,21 @@ public int getSegundosMision(){
 
         jPanel1.add(jScrollPane5, new org.netbeans.lib.awtextra.AbsoluteConstraints(795, 361, 278, 100));
 
+        btnInterrupcion.setBackground(new java.awt.Color(255, 51, 51));
+        btnInterrupcion.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        btnInterrupcion.setForeground(new java.awt.Color(255, 255, 255));
+        btnInterrupcion.setIcon(new javax.swing.ImageIcon(getClass().getResource("/imagenes/pngtree-an-3d-alert-button-icon-design-with-blue-and-red-color-png-image_14430137.png"))); // NOI18N
         btnInterrupcion.setText("SIMULAR IMPACTO");
+        btnInterrupcion.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
+        btnInterrupcion.setDefaultCapable(false);
+        btnInterrupcion.setMaximumSize(new java.awt.Dimension(100, 647));
+        btnInterrupcion.setMinimumSize(new java.awt.Dimension(90, 647));
         btnInterrupcion.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnInterrupcionActionPerformed(evt);
             }
         });
-        jPanel1.add(btnInterrupcion, new org.netbeans.lib.awtextra.AbsoluteConstraints(400, 430, -1, -1));
+        jPanel1.add(btnInterrupcion, new org.netbeans.lib.awtextra.AbsoluteConstraints(420, 410, 310, 130));
 
         btnGenerar.setText("Generar 20 Procesos");
         btnGenerar.addActionListener(new java.awt.event.ActionListener() {
@@ -351,7 +374,7 @@ public int getSegundosMision(){
                 btnGenerarActionPerformed(evt);
             }
         });
-        jPanel1.add(btnGenerar, new org.netbeans.lib.awtextra.AbsoluteConstraints(580, 430, -1, -1));
+        jPanel1.add(btnGenerar, new org.netbeans.lib.awtextra.AbsoluteConstraints(500, 340, -1, -1));
 
         tblCPU.setBackground(new java.awt.Color(51, 204, 0));
         tblCPU.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
@@ -376,32 +399,59 @@ public int getSegundosMision(){
         });
         jScrollPane1.setViewportView(tblCPU);
 
-        jPanel1.add(jScrollPane1, new org.netbeans.lib.awtextra.AbsoluteConstraints(400, 480, 310, 100));
+        jPanel1.add(jScrollPane1, new org.netbeans.lib.awtextra.AbsoluteConstraints(410, 590, 310, 100));
 
         panelGrafica.setLayout(new java.awt.BorderLayout());
-        jPanel1.add(panelGrafica, new org.netbeans.lib.awtextra.AbsoluteConstraints(420, 620, 300, 190));
+        jPanel1.add(panelGrafica, new org.netbeans.lib.awtextra.AbsoluteConstraints(750, 510, 300, 190));
 
+        lblModo.setFont(new java.awt.Font("Segoe UI Black", 0, 18)); // NOI18N
         lblModo.setText("Modo:Usuario");
-        jPanel1.add(lblModo, new org.netbeans.lib.awtextra.AbsoluteConstraints(440, 100, 120, -1));
+        jPanel1.add(lblModo, new org.netbeans.lib.awtextra.AbsoluteConstraints(450, 60, 240, -1));
 
         sldVelocidad.setMaximum(2000);
         sldVelocidad.setMinimum(100);
         sldVelocidad.setValue(500);
         jPanel1.add(sldVelocidad, new org.netbeans.lib.awtextra.AbsoluteConstraints(560, 20, -1, -1));
 
+        jLabel3.setFont(new java.awt.Font("Segoe UI Black", 0, 14)); // NOI18N
+        jLabel3.setForeground(new java.awt.Color(255, 255, 255));
+        jLabel3.setText("Listos");
+        jPanel1.add(jLabel3, new org.netbeans.lib.awtextra.AbsoluteConstraints(150, 50, 200, 60));
+
+        jLabel8.setFont(new java.awt.Font("Segoe UI Black", 0, 14)); // NOI18N
+        jLabel8.setForeground(new java.awt.Color(255, 255, 255));
+        jLabel8.setText("Procesador");
+        jPanel1.add(jLabel8, new org.netbeans.lib.awtextra.AbsoluteConstraints(520, 560, 90, 20));
+
+        jLabel9.setFont(new java.awt.Font("Segoe UI Black", 0, 14)); // NOI18N
+        jLabel9.setForeground(new java.awt.Color(255, 255, 255));
+        jLabel9.setText("Suspendidos Bloqueados");
+        jPanel1.add(jLabel9, new org.netbeans.lib.awtextra.AbsoluteConstraints(810, 320, 200, 20));
+
+        jLabel10.setFont(new java.awt.Font("Segoe UI Black", 0, 14)); // NOI18N
+        jLabel10.setForeground(new java.awt.Color(255, 255, 255));
+        jLabel10.setText("Bloqueados");
+        jPanel1.add(jLabel10, new org.netbeans.lib.awtextra.AbsoluteConstraints(870, 40, 200, 60));
+
+        jLabel11.setFont(new java.awt.Font("Segoe UI Black", 0, 14)); // NOI18N
+        jLabel11.setForeground(new java.awt.Color(255, 255, 255));
+        jLabel11.setText("Suspendidos");
+        jPanel1.add(jLabel11, new org.netbeans.lib.awtextra.AbsoluteConstraints(130, 390, 200, 60));
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addGap(46, 46, 46)
+                .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, 830, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 0, Short.MAX_VALUE))
+                .addGap(0, 12, Short.MAX_VALUE))
         );
 
         pack();
@@ -554,8 +604,12 @@ public int getSegundosMision(){
     private javax.swing.JButton btnGenerar;
     private javax.swing.JButton btnInterrupcion;
     private javax.swing.JComboBox<String> cbxAlgoritmos;
-    private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel10;
+    private javax.swing.JLabel jLabel11;
     private javax.swing.JLabel jLabel2;
+    private javax.swing.JLabel jLabel3;
+    private javax.swing.JLabel jLabel8;
+    private javax.swing.JLabel jLabel9;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
