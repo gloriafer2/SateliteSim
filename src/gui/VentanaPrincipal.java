@@ -61,13 +61,16 @@ public int getSegundosMision(){
 
     public VentanaPrincipal() {
         initComponents();
+        
        
         cpu = new CPUThread(colaListos, colaBloqueados, semaforoGlobal, this);
+        generarProcesosIniciales();
         cpu.start(); 
+        
+        
         
         new javax.swing.Timer(1000, (e) -> {
             segundosMision++;
-            // --- CUENTA REGRESIVA DE DEADLINES (RTOS) ---
             restarDeadline(colaListos);
             restarDeadline(colaBloqueados);
             restarDeadline(colaSuspendidos);
@@ -314,7 +317,7 @@ public int getSegundosMision(){
         });
         jScrollPane2.setViewportView(tblBloqueados);
 
-        jPanel1.add(jScrollPane2, new org.netbeans.lib.awtextra.AbsoluteConstraints(778, 59, 295, 256));
+        jPanel1.add(jScrollPane2, new org.netbeans.lib.awtextra.AbsoluteConstraints(778, 59, 295, 120));
 
         tblSwapBloqueados.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
@@ -332,7 +335,7 @@ public int getSegundosMision(){
             tblSwapBloqueados.getColumnModel().getColumn(2).setResizable(false);
         }
 
-        jPanel1.add(jScrollPane5, new org.netbeans.lib.awtextra.AbsoluteConstraints(795, 361, 278, 232));
+        jPanel1.add(jScrollPane5, new org.netbeans.lib.awtextra.AbsoluteConstraints(795, 361, 278, 100));
 
         btnInterrupcion.setText("SIMULAR IMPACTO");
         btnInterrupcion.addActionListener(new java.awt.event.ActionListener() {
@@ -731,6 +734,21 @@ public int getSegundosMision(){
         // 4. Refrescar
         panelGrafica.revalidate();
         panelGrafica.repaint();
+    }
+    
+    public void generarProcesosIniciales() {
+        for (int i = 0; i < 5; i++) {
+            int inst = (int) (Math.random() * 10) + 5; 
+            int prio = (int) (Math.random() * 5) + 1; 
+            int dead = (int) (Math.random() * 50) + 20; 
+
+            Proceso nuevo = new Proceso("P-INI" + i, "Sat-Inicial-" + i, inst, prio, dead);
+            nuevo.setEstado("Listo");
+
+            this.colaListos.agregar(nuevo);
+        }
+        this.escribirLog("[SO] Configuración inicial cargada: 5 procesos listos.");
+        this.actualizarTablas();
     }
     
     
