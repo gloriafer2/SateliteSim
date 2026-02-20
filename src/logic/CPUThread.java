@@ -27,6 +27,8 @@ public class CPUThread extends Thread {
     @Override
     public void run() {
         while (true) {
+            ventana.limpiarProcesosExpirados();
+            
                 try {
                     semaforoCPU.acquire();
                     if (interrupcionActiva || procesoEnEjecucion == null) {
@@ -60,16 +62,15 @@ public class CPUThread extends Thread {
                     if (procesoEnEjecucion != null) {
                         procesoEnEjecucion.ejecutarCiclo();
 
-                        // --- Validar Deadline (Aborto) ---
-                        // Aquí sumamos un FALLO a la gráfica
+                        // Aquí sumo un FALLO a la gráfica
                         if (procesoEnEjecucion.getDeadline()<= 0){
                             procesoEnEjecucion.setEstado("FALLIDO");
                             ventana.sumarFallo(); // <--- NUEVO: Actualiza la gráfica
                             ventana.escribirLog("ALERTA: "+ procesoEnEjecucion.getNombre() + " abortado por Deadline.");
                             ventana.liberarMemoriaYRevisarSuspendidos(procesoEnEjecucion);
                             procesoEnEjecucion = null;
+                            ventana.refrescarBarraMemoria();
                         } 
-                        // --- Validar Finalización ---
                         // Aquí sumamos un ÉXITO a la gráfica
                         else if (procesoEnEjecucion.getInstruccionesTotales() <= 0){
                             procesoEnEjecucion.setEstado("Terminado");
@@ -77,6 +78,8 @@ public class CPUThread extends Thread {
                             ventana.escribirLog("Exito: " + procesoEnEjecucion.getNombre() + " completó su misión.");
                             ventana.liberarMemoriaYRevisarSuspendidos(procesoEnEjecucion);
                             procesoEnEjecucion = null;
+                            ventana.actualizarMonitorMemoria();
+                            
                         }
                         // --- Validar Round Robin ---
                         else if (ventana.getAlgoritmoActual().equals("Round Robin")){
@@ -91,12 +94,14 @@ public class CPUThread extends Thread {
                     }
 
                     semaforoCPU.release();
-                    Thread.sleep(200); 
+                    Thread.sleep(500); 
 
                 } catch (InterruptedException e) {
                     System.out.println("Error en el CPU: " + e.getMessage());
                 }
             }
+        
+        
     }
 
     private void manejarInterrupcion() {
@@ -124,7 +129,6 @@ public class CPUThread extends Thread {
     }
 
     public void setProcesoEnEjecucion(Object object) {
-        // Mantenemos esto por compatibilidad, aunque no se use
     }
 
     public void detenerProcesoInmediatamente() {
@@ -133,4 +137,5 @@ public class CPUThread extends Thread {
             this.interrupcionActiva = false; 
         }
     }
+    
 }

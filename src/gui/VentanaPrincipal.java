@@ -40,9 +40,94 @@ public void sumarExito() {
         this.procesosFallidos++;
         actualizarGrafica();
     }
+    
+    public void actualizarMonitorMemoria() {
+    int totalEnRAM = 0; // Empezamos de cero absoluto
+
+    // 1. Sumar lo que hay en Listos
+    datastructura.Nodo actualL = colaListos.getInicio();
+    while (actualL != null) {
+        totalEnRAM += actualL.getDato().getMemoriaMb();
+        actualL = actualL.getSiguiente();
+    }
+
+    datastructura.Nodo actualB = colaBloqueados.getInicio();
+    while (actualB != null) {
+        totalEnRAM += actualB.getDato().getMemoriaMb();
+        actualB = actualB.getSiguiente();
+    }
+
+    if (cpu != null && cpu.getProcesoEnEjecucion() != null) {
+        totalEnRAM += cpu.getProcesoEnEjecucion().getMemoriaMb();
+    }
+
+    // Actualizar la variable y la barra visual
+    this.memoriaUsadaActual = totalEnRAM;
+    prgMemoria.setValue(totalEnRAM);
+    prgMemoria.setString(totalEnRAM + " MB / 200 MB");
+}
+    
+    public void refrescarBarraMemoria() {
+    int sumaRAM = 0;
+
+    datastructura.Nodo auxL = colaListos.getInicio();
+    while (auxL != null) {
+        sumaRAM += auxL.getDato().getMemoriaMb();
+        auxL = auxL.getSiguiente();
+    }
+
+    datastructura.Nodo auxB = colaBloqueados.getInicio();
+    while (auxB != null) {
+        sumaRAM += auxB.getDato().getMemoriaMb();
+        auxB = auxB.getSiguiente();
+    }
+
+    if (cpu != null && cpu.getProcesoEnEjecucion() != null) {
+        sumaRAM += cpu.getProcesoEnEjecucion().getMemoriaMb();
+    }
+
+    this.memoriaUsadaActual = sumaRAM;
+    prgMemoria.setValue(sumaRAM);
+    prgMemoria.setString(sumaRAM + " MB / 200 MB");
+}
+    
+    public void limpiarProcesosExpirados() {
+    int tiempoActual = segundosMision;
+    datastructura.Nodo anterior = null;
+    datastructura.Nodo actual = colaListos.getInicio();
+
+    while (actual != null) {
+        clases.Proceso p = actual.getDato();
+        
+        if (tiempoActual >= p.getDeadline()) {
+            if (anterior == null) {
+                colaListos.setInicio(actual.getSiguiente());
+            } else {
+                anterior.setSiguiente(actual.getSiguiente());
+            }
+            
+            p.setEstado("Fallido");
+            sumarFallo(); //
+            escribirLog("EXPIRADO: " + p.getNombre() + " salió de RAM por Deadline.");
+            
+            actual = actual.getSiguiente();
+        } else {
+            anterior = actual;
+            actual = actual.getSiguiente();
+        }
+    }
+    actualizarMonitorMemoria();
+    actualizarTablas();
+}
+    
+    
+    
+    
+    
+    
 
 int segundosMision = 0;
-private int contadorGlobal = 1; // Para que P1, P2... funcionen
+private int contadorGlobal = 1; 
 private Semaphore semaforoGlobal = new Semaphore(1);
 private CPUThread cpu;
 // Para llevar el control de los 200MB de RAM
@@ -61,6 +146,7 @@ public int getSegundosMision(){
 
     public VentanaPrincipal() {
         initComponents();
+        actualizarMonitorMemoria();
         
        
         cpu = new CPUThread(colaListos, colaBloqueados, semaforoGlobal, this);
@@ -75,10 +161,8 @@ public int getSegundosMision(){
             restarDeadline(colaBloqueados);
             restarDeadline(colaSuspendidos);
 
-            // --- SWAP OUT: De RAM a DISCO ---
-            // --- DESBLOQUEO DIRECTO EN RAM ---
+          
              
-                        // --- DESBLOQUEO EN DISCO (Cambio de estado abajo) ---
             liberarMemoriaYRevisarSuspendidos(null); 
             actualizarTablas(); 
             lblReloj.setText("Reloj de mision: " + segundosMision + "s");
@@ -152,7 +236,6 @@ public int getSegundosMision(){
                                 lista.eliminarProcesoEspecifico(p);
                                 colaSuspendidos.agregar(p);
 
-                                // Liberar memoria RAM (importante para el límite de 200MB)
                                 memoriaUsadaActual -= p.getMemoriaMb();
                                 escribirLog("SWAP-OUT: " + p.getNombre() + " enviado a disco.");
 
@@ -164,7 +247,6 @@ public int getSegundosMision(){
                 }
 }
 
-// METODO AUXILIAR: Necesario para que restarDeadline sepa contra qué comparar
        
         private int obtenerMejorDeadlineEnSwap() {
             if (colaSuspendidos.estaVacia()) return 999999; 
@@ -180,7 +262,6 @@ public int getSegundosMision(){
             return min;
         }
 
-        // Método auxiliar para la comparación de prioridad
        
     /**
      * This method is called from within the constructor to initialize the form.
@@ -218,6 +299,8 @@ public int getSegundosMision(){
         jLabel9 = new javax.swing.JLabel();
         jLabel10 = new javax.swing.JLabel();
         jLabel11 = new javax.swing.JLabel();
+        prgMemoria = new javax.swing.JProgressBar();
+        lblMemoriaUsada = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -406,7 +489,7 @@ public int getSegundosMision(){
 
         lblModo.setFont(new java.awt.Font("Segoe UI Black", 0, 18)); // NOI18N
         lblModo.setText("Modo:Usuario");
-        jPanel1.add(lblModo, new org.netbeans.lib.awtextra.AbsoluteConstraints(450, 60, 240, -1));
+        jPanel1.add(lblModo, new org.netbeans.lib.awtextra.AbsoluteConstraints(410, 70, 240, -1));
 
         sldVelocidad.setMaximum(2000);
         sldVelocidad.setMinimum(100);
@@ -438,6 +521,14 @@ public int getSegundosMision(){
         jLabel11.setText("Suspendidos");
         jPanel1.add(jLabel11, new org.netbeans.lib.awtextra.AbsoluteConstraints(130, 390, 200, 60));
 
+        prgMemoria.setStringPainted(true);
+        jPanel1.add(prgMemoria, new org.netbeans.lib.awtextra.AbsoluteConstraints(680, 70, -1, 20));
+
+        lblMemoriaUsada.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
+        lblMemoriaUsada.setForeground(new java.awt.Color(255, 255, 255));
+        lblMemoriaUsada.setText("jLabel1");
+        jPanel1.add(lblMemoriaUsada, new org.netbeans.lib.awtextra.AbsoluteConstraints(730, 40, 70, -1));
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -458,48 +549,44 @@ public int getSegundosMision(){
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnGenerarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnGenerarActionPerformed
-      
-        try{
-            semaforoGlobal.acquire();
-                memoriaUsadaActual = 0; 
-                colaListos.vaciar();      // Asegúrate de tener este método en tu lista
-                colaBloqueados.vaciar();
-                colaSuspendidos.vaciar();
-                contadorGlobal = 1;
-                
-               
-                escribirLog("--- SIMULACIÓN REINICIADA ---");
-                
-                for (int i = 1; i <= 20; i++) {
-                    String id = "P" + contadorGlobal;
-                    String nombre = "Tarea_" + contadorGlobal;
-                    int instrucciones = (int) (Math.random() * 50) + 10;
-                    int prioridad = (int) (Math.random() * 5) + 1; // Prioridad del 1 al 5
-                    int memoriaMB = (int) (Math.random() * 50) + 10; 
 
-                        // Memoria aleatoria
-                    int deadline = segundosMision +(int) (Math.random()*200) + 100;
+        try {
+        semaforoGlobal.acquire();
+        
+        actualizarMonitorMemoria(); 
 
-                    clases.Proceso nuevo = new clases.Proceso(id, nombre, instrucciones, prioridad, deadline);
-                    
-                // cabe en ram
-                if (memoriaUsadaActual + memoriaMB <= 200) { 
-                    nuevo.setEstado("Listo");
-                    colaListos.agregar(nuevo); 
-                    memoriaUsadaActual += memoriaMB;
-                    escribirLog("ADMITIDO: " + nombre + " en RAM (" + memoriaMB + "MB)");
-                } else {
-                    // Si no cabe, se va a la cola de Suspendidos
-                    nuevo.setEstado("Suspendido");
-                    colaSuspendidos.agregar(nuevo);
-                    escribirLog("SWAP: " + nombre + " enviado a disco por falta de RAM");
-                }
-                contadorGlobal++;
+        for (int i = 1; i <= 20; i++) {
+            String id = "P" + contadorGlobal;
+            String nombre = "Tarea_" + contadorGlobal;
+            int instrucciones = (int) (Math.random() * 50) + 10;
+            int prioridad = (int) (Math.random() * 5) + 1; 
+            int memoriaMB = (int) (Math.random() * 50) + 10; 
+            int deadline = segundosMision + (int) (Math.random() * 200) + 100;
+
+            clases.Proceso nuevo = new clases.Proceso(id, nombre, instrucciones, prioridad, deadline, memoriaMB);
+            refrescarBarraMemoria();
+            
+            if (this.memoriaUsadaActual + memoriaMB <= 200) { 
+                nuevo.setEstado("Listo");
+                colaListos.agregar(nuevo); 
+                
+                this.memoriaUsadaActual += memoriaMB;
+                
+                escribirLog("ADMITIDO: " + nombre + " (" + memoriaMB + "MB)");
+            } else {
+                nuevo.setEstado("Suspendido");
+                colaSuspendidos.agregar(nuevo);
+                escribirLog("SWAP: " + nombre + " a disco (RAM Llena)");
             }
-            ordenarColaPorPrioridad(colaListos); 
-            semaforoGlobal.release();
-            actualizarTablas();
-        }catch (InterruptedException e) {}
+            contadorGlobal++;
+        }
+        
+        ordenarColaPorPrioridad(colaListos); 
+        semaforoGlobal.release();
+        actualizarTablas();
+        actualizarMonitorMemoria(); // Refresca la barra visualmente
+        
+    } catch (InterruptedException e) {}
     }//GEN-LAST:event_btnGenerarActionPerformed
 
     
@@ -526,18 +613,15 @@ public int getSegundosMision(){
        // Creamos un hilo anónimo para cumplir con el requisito de "Thread independiente"
     Thread hiloInterrupcion = new Thread(() -> {
         try {
-            // 1. Log inicial
             escribirLog("ALERTA: ¡Colisión inminente detectada!");
             
-            // 2. Simulamos un pequeño retraso del hardware (opcional, da realismo)
             Thread.sleep(500); 
             
-            // 3. Accedemos al semáforo para detener el CPU de forma segura
             semaforoGlobal.acquire(); 
             
             clases.Proceso p = cpu.getProcesoEnEjecucion();
             if (p != null) {
-                cpu.detenerProcesoInmediatamente(); // Tu método actual
+                cpu.detenerProcesoInmediatamente(); 
                 p.setEstado("Bloqueado");
                 
                 if (!colaBloqueados.contiene(p)) {
@@ -545,7 +629,6 @@ public int getSegundosMision(){
                 }
                 escribirLog("INTERRUPCIÓN: " + p.getNombre() + " evacuado a Bloqueados.");
                 
-                // Actualizamos GUI desde el hilo de eventos para evitar errores
                 javax.swing.SwingUtilities.invokeLater(() -> actualizarTablas());
             }
             semaforoGlobal.release();
@@ -616,9 +699,11 @@ public int getSegundosMision(){
     private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JScrollPane jScrollPane4;
     private javax.swing.JScrollPane jScrollPane5;
+    private javax.swing.JLabel lblMemoriaUsada;
     private javax.swing.JLabel lblModo;
     private javax.swing.JLabel lblReloj;
     private javax.swing.JPanel panelGrafica;
+    private javax.swing.JProgressBar prgMemoria;
     private javax.swing.JSlider sldVelocidad;
     private javax.swing.JScrollPane tbListos;
     private javax.swing.JTable tblBloqueados;
@@ -631,6 +716,9 @@ public int getSegundosMision(){
     // End of variables declaration//GEN-END:variables
 
        public void actualizarTablas() {
+           java.awt.EventQueue.invokeLater(() -> {
+        try {
+           
             DefaultTableModel modL = (DefaultTableModel) tblListos.getModel();
             DefaultTableModel modB = (DefaultTableModel) tblBloqueados.getModel();
             DefaultTableModel modSL = (DefaultTableModel) tblSwapListos.getModel();
@@ -644,12 +732,12 @@ public int getSegundosMision(){
 
             clases.Proceso pEnEjecucion = cpu.getProcesoEnEjecucion();
 
-            // 1. Monitor PCB (Lo que ya te funciona)
+            
             if (pEnEjecucion != null) {
                 modCPU.addRow(new Object[]{pEnEjecucion.getId(), "Ejecucion", pEnEjecucion.getMar(), pEnEjecucion.getPc()});
             }
 
-            // 2. RAM: Listos
+          
             datastructura.Nodo actual = colaListos.getInicio();
             while (actual != null) {
                 clases.Proceso p = actual.getDato();
@@ -676,11 +764,15 @@ public int getSegundosMision(){
                 else { modSL.addRow(fila); }
                 actual = actual.getSiguiente();
             }
+            } catch (Exception e) {
+          
+            System.out.println("Sincronización visual recuperada.");
         }
+    });
+}
+        
 
-// ESTO QUITA EL ERROR ROJO: Crea el método que falta
       public void actualizarPanelCPU(clases.Proceso p) {
-            // Aquí pondremos luego el código para mostrar el proceso en el centro
         }
     
     public void reordenarColaSegunAlgoritmo() {
@@ -688,22 +780,22 @@ public int getSegundosMision(){
 
         switch (algoritmoActual) {
             case "FCFS":
-                // No necesita reordenar, es el orden de llegada
+             
                 break;
             case "SRT":
-                colaListos.ordenarPorTiempoRestante(); // Método que crearemos en la lista
+                colaListos.ordenarPorTiempoRestante(); 
                 break;
             case "Prioridad Estática":
-                colaListos.ordenarPorPrioridad(); // Ya deberías tener algo similar
+                colaListos.ordenarPorPrioridad(); 
                 break;
             case "EDF":
-                colaListos.ordenarPorDeadline(); // Por tiempo límite
+                colaListos.ordenarPorDeadline(); 
                 break;
             case "Round Robin":
-                // Se mantiene el orden de llegada
+                
                 break;
         }
-        actualizarTablas(); // Refrescamos la interfaz para que se vea el nuevo orden
+        actualizarTablas(); 
     }
     
             public String getAlgoritmoActual() {
@@ -711,7 +803,6 @@ public int getSegundosMision(){
         }
 
         public int getQuantumGlobal() {
-            // Si lo tienes en un Spinner o TextField, conviértelo a int
             return 3; 
         }
 
@@ -723,17 +814,14 @@ public int getSegundosMision(){
    txtLog.append("[" + segundosMision + "s] " + mensaje + "\n");
      txtLog.setCaretPosition( txtLog.getDocument().getLength());
 }
-    // ESTA ES LA ÚNICA VERSIÓN QUE DEBE EXISTIR
     
         public void liberarMemoriaYRevisarSuspendidos(clases.Proceso pTerminado) {
-    // 1. Liberar memoria si alguien terminó
         if (pTerminado != null) {
             this.memoriaUsadaActual -= pTerminado.getMemoriaMb();
             escribirLog("RAM: Liberado " + pTerminado.getNombre());
         }
 
-        // 2. BUSCAR AL MÁS URGENTE EN DISCO (EDF)
-        // Dentro de liberarMemoriaYRevisarSuspendidos en VentanaPrincipal.java
+        
         synchronized(colaSuspendidos) {
             if (colaSuspendidos.estaVacia()) return;
 
@@ -743,20 +831,17 @@ public int getSegundosMision(){
             while (aux != null) {
                 clases.Proceso p = aux.getDato();
 
-                // CAMBIO CLAVE: Comparamos TODOS los procesos en disco por su Deadline
-                // No importa si dice "Suspendido", "Bloqueado-Suspendido" o "Suspendido-Listo"
+                
                 if (urgente == null || p.getDeadline() < urgente.getDeadline()) {
                     urgente = p;
                 }
                 aux = aux.getSiguiente();
             }
 
-            // Si el más urgente cabe en los 200MB, lo subimos
             if (urgente != null && (memoriaUsadaActual + urgente.getMemoriaMb()) <= 200) {
                 colaSuspendidos.eliminarProcesoEspecifico(urgente);
                 memoriaUsadaActual += urgente.getMemoriaMb();
 
-                // Al subir a RAM, siempre vuelve como "Listo" para que el CPU lo tome
                 urgente.setEstado("Listo"); 
                 colaListos.agregar(urgente);
 
@@ -769,7 +854,6 @@ public int getSegundosMision(){
         
     
     public void actualizarGrafica() {
-        // 1. Datos
         DefaultPieDataset dataset = new DefaultPieDataset();
         dataset.setValue("Misión Exitosa", procesosExitosos);
         dataset.setValue("Fallo de Deadline", procesosFallidos);
@@ -794,12 +878,17 @@ public int getSegundosMision(){
         for (int i = 0; i < 5; i++) {
             int inst = (int) (Math.random() * 10) + 5; 
             int prio = (int) (Math.random() * 5) + 1; 
-            int dead = (int) (Math.random() * 50) + 20; 
+            int dead = (int) (Math.random() * 50) + 20;
+            int memoriaMb = 20;
 
-            Proceso nuevo = new Proceso("P-INI" + i, "Sat-Inicial-" + i, inst, prio, dead);
+            Proceso nuevo = new Proceso("P-INI" + i, "Sat-Inicial-" + i, inst, prio, dead, memoriaMb);
             nuevo.setEstado("Listo");
+            
+            
 
             this.colaListos.agregar(nuevo);
+            
+            this.memoriaUsadaActual += memoriaMb;
         }
         this.escribirLog("[SO] Configuración inicial cargada: 5 procesos listos.");
         this.actualizarTablas();
