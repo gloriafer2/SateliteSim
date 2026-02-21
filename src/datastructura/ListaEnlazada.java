@@ -24,8 +24,7 @@ public class ListaEnlazada {
 }
     
         public void vaciar() {
-        this.inicio = null; // Al quitar la referencia al primer nodo, Java limpia el resto
-        // Si tienes un contador de tamaño en tu lista, ponlo a 0 aquí también
+        this.inicio = null; 
     }
         
         
@@ -71,7 +70,6 @@ public class ListaEnlazada {
     public void agregar(Proceso nuevoProceso) {
     Nodo nuevoNodo = new Nodo(nuevoProceso);
 
-    // Si el número es menor, tiene mas prioridad y va al inicio
     if (inicio == null || nuevoProceso.getPrioridad() < inicio.getDato().getPrioridad()) {
         nuevoNodo.setSiguiente(inicio);
         inicio = nuevoNodo;
@@ -119,6 +117,9 @@ public class ListaEnlazada {
     public Nodo getInicio() {
         return inicio; 
     }
+    public void setInicio(Nodo inicio) {
+    this.inicio = inicio;
+}
     
     
     
@@ -149,7 +150,7 @@ public class ListaEnlazada {
             huboCambio = false;
             Nodo actual = inicio;
             while (actual.getSiguiente() != null) {
-                // 1 es mayor prioridad que 2, por eso ordenamos de menor a mayor
+                // 1 es mayor prioridad que 2, por eso ordeno de menor a mayor
                 if (actual.getDato().getPrioridad() > actual.getSiguiente().getDato().getPrioridad()) {
                     Proceso temp = actual.getDato();
                     actual.setDato(actual.getSiguiente().getDato());
@@ -178,6 +179,23 @@ public class ListaEnlazada {
                 actual = actual.getSiguiente();
             }
         } while (huboCambio);
+    }
+    
+    
+        public void agregarAlFinal(Proceso nuevoProceso) {
+        datastructura.Nodo nuevoNodo = new datastructura.Nodo(nuevoProceso);
+
+        // Si la lista está vacía, el nuevo nodo es el inicio
+        if (inicio == null) {
+            inicio = nuevoNodo;
+        } else {
+            datastructura.Nodo actual = inicio;
+            while (actual.getSiguiente() != null) {
+                actual = actual.getSiguiente();
+            }
+            actual.setSiguiente(nuevoNodo);
+        }
+        tamaño++;
     }
 
 }

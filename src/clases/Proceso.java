@@ -27,18 +27,17 @@ public class Proceso {
     private int memoriaMb;       // Tamaño en memoria para el Planificador de Mediano Plazo
     private int ciclosBloqueo;   // Para simular E/S
 
-    public Proceso(String id, String nombre, int instrucciones, int prioridad, int deadline) {
+    public Proceso(String id, String nombre, int instrucciones, int prioridad, int deadline, int memoriaMb) {
         this.id = id;
         this.nombre = nombre;
         this.instruccionesTotales = instrucciones;
         this.prioridad = prioridad;
         this.tiempoLimite = deadline;
+        this.memoriaMb= memoriaMb;
         
         this.estado = "Nuevo"; 
         this.pc = 0; 
         this.mar = (int)(Math.random() * 5000); 
-        // Generamos un tamaño de memoria aleatorio (10MB a 60MB)
-        this.memoriaMb = (int)(Math.random() * 50) + 10;
         this.ciclosBloqueo = 0;
     }
 
@@ -54,8 +53,10 @@ public class Proceso {
     public void ejecutarCiclo() {
         this.pc++;
         this.mar++;
-        this.instruccionesTotales--;
         this.tiempoLimite--;
+        if (this.instruccionesTotales > 0) {
+        this.instruccionesTotales--; 
+    }
         
         if(this.tiempoLimite < 0){
             //error deadline
