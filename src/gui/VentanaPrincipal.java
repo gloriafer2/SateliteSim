@@ -180,13 +180,11 @@ public int getSegundosMision(){
             }
         }
 
-        // Método para que el CPU sepa cuánto tiempo dormir
         public int getRetrasoSimulacion() {
             return sldVelocidad.getValue();
         }
     
         public void gestionarTransicionesDeColas() {
-        // CASO RAM: Revisar si alguien en Bloqueados ya pasó a "Listo"
             datastructura.Nodo auxB = colaBloqueados.getInicio();
             while (auxB != null) {
                 clases.Proceso p = auxB.getDato();
@@ -203,48 +201,64 @@ public int getSegundosMision(){
     
     
        private void restarDeadline(datastructura.ListaEnlazada lista) {
-            datastructura.Nodo aux = lista.getInicio();
-                while (aux != null) {
-                    clases.Proceso p = aux.getDato();
-                    datastructura.Nodo siguienteNodo = aux.getSiguiente(); 
+    datastructura.Nodo aux = lista.getInicio();
+    
+    while (aux != null) {
+        clases.Proceso p = aux.getDato();
+        datastructura.Nodo siguienteNodo = aux.getSiguiente(); 
 
-                    if (p.getDeadline() > 0) {
-                        p.setDeadline(p.getDeadline() - 1);
-                    }
+        // 1. Reducir Deadline de vida siempre
+        if (p.getDeadline() > 0) {
+            p.setDeadline(p.getDeadline() - 1);
+        }
 
-                    if (p.getEstado().equals("Bloqueado")) {
-                        if (Math.random() > 0.90) { 
+        // --- LÓGICA DE BLOQUEADOS ---
+        if (p.getEstado().equals("Bloqueado")) {
+            
+            if (memoriaUsadaActual > 170) {
+                p.setEstado("Bloqueado-Suspendido");
+                lista.eliminarProcesoEspecifico(p); 
+                colaSuspendidos.agregarAlFinal(p);
+                
+                memoriaUsadaActual -= p.getMemoriaMb(); 
+                escribirLog("SWAP-OUT: " + p.getNombre() + " enviado a disco por falta de espacio (Bloqueado-Suspendido).");
+            } 
+            else {
+                p.setCiclosBloqueo(p.getCiclosBloqueo() - 1);
 
-                            // 1. COMPARACIÓN DE DEADLINE
-                            int mejorEnSwap = obtenerMejorDeadlineEnSwap();
-
-                            if (p.getDeadline() <= mejorEnSwap) {
-                                // CASO: Prioridad para volver a RAM
-                                p.setEstado("Listo");
-
-                                // ELIMINACIÓN FÍSICA: Usamos 'lista' que es la que estamos recorriendo
-                                lista.eliminarProcesoEspecifico(p); 
-
-                                if (!colaListos.contiene(p)) {
-                                    colaListos.agregar(p);
-                                }
-                                escribirLog("ADMITIDO: " + p.getNombre() + " vuelve a RAM por urgencia.");
-                            } else {
-                                // CASO: Hay procesos más urgentes en disco, este se va a SWAP
-                                p.setEstado("Suspendido-Listo");
-
-                                lista.eliminarProcesoEspecifico(p);
-                                colaSuspendidos.agregar(p);
-
-                                memoriaUsadaActual -= p.getMemoriaMb();
-                                escribirLog("SWAP-OUT: " + p.getNombre() + " enviado a disco.");
-
-                                liberarMemoriaYRevisarSuspendidos(null); 
-                            }
-                        }
-                    }
-                    aux = siguienteNodo;
+                if (p.getCiclosBloqueo() <= 0) {
+                    lista.eliminarProcesoEspecifico(p);
+                    p.setEstado("Listo");
+                    colaListos.agregarAlFinal(p);
+                    if (!algoritmoActual.equals("FCFS")){
+                        reordenarColaSegunAlgoritmo();
+                    } 
                 }
+            }
+        }
+
+        else if (p.getEstado().equals("Bloqueado-Suspendido")) {
+            p.setCiclosBloqueo(p.getCiclosBloqueo() - 1);
+            
+            if (p.getCiclosBloqueo() <= 0) {
+                p.setEstado("Listo-Suspendido");
+                escribirLog("DISCO: " + p.getNombre() + " terminó su E/S en disco. Estado: Listo-Suspendido.");
+            }
+        }
+        
+        else if (p.getEstado().equals("Listo-Suspendido")) {
+            if ((memoriaUsadaActual + p.getMemoriaMb()) <= MAX_MEMORIA_RAM) {
+                lista.eliminarProcesoEspecifico(p);
+                p.setEstado("Listo");
+                colaListos.agregarAlFinal(p);
+                memoriaUsadaActual += p.getMemoriaMb();
+                reordenarColaSegunAlgoritmo();
+                escribirLog("SWAP-IN: " + p.getNombre() + " vuelve a RAM.");
+            }
+        }
+
+        aux = siguienteNodo;
+    }
 }
 
        
@@ -281,8 +295,7 @@ public int getSegundosMision(){
         jScrollPane4 = new javax.swing.JScrollPane();
         tblSwapListos = new javax.swing.JTable();
         cbxAlgoritmos = new javax.swing.JComboBox<>();
-        jLabel2 = new javax.swing.JLabel();
-        txtQuantum = new javax.swing.JTextField();
+        txtQuantum = new javax.swing.JLabel();
         jScrollPane2 = new javax.swing.JScrollPane();
         tblBloqueados = new javax.swing.JTable();
         jScrollPane5 = new javax.swing.JScrollPane();
@@ -310,7 +323,7 @@ public int getSegundosMision(){
         lblReloj.setFont(new java.awt.Font("OCR A Extended", 1, 14)); // NOI18N
         lblReloj.setForeground(new java.awt.Color(255, 255, 255));
         lblReloj.setText("Reloj de Misión: 00:00");
-        jPanel1.add(lblReloj, new org.netbeans.lib.awtextra.AbsoluteConstraints(840, 20, -1, -1));
+        jPanel1.add(lblReloj, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 10, -1, -1));
 
         tbListos.setBackground(new java.awt.Color(0, 153, 153));
         tbListos.setBorder(new javax.swing.border.LineBorder(new java.awt.Color(0, 0, 0), 5, true));
@@ -337,14 +350,15 @@ public int getSegundosMision(){
         });
         tbListos.setViewportView(tblListos);
 
-        jPanel1.add(tbListos, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 110, 394, 249));
+        jPanel1.add(tbListos, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 100, 410, 240));
 
+        txtLog.setBackground(new java.awt.Color(0, 51, 51));
         txtLog.setColumns(20);
         txtLog.setRows(5);
         txtLog.setBorder(javax.swing.BorderFactory.createCompoundBorder());
         jScrollPane3.setViewportView(txtLog);
 
-        jPanel1.add(jScrollPane3, new org.netbeans.lib.awtextra.AbsoluteConstraints(410, 100, 331, 232));
+        jPanel1.add(jScrollPane3, new org.netbeans.lib.awtextra.AbsoluteConstraints(410, 100, 331, 380));
 
         tblSwapListos.setBackground(new java.awt.Color(0, 153, 153));
         tblSwapListos.setModel(new javax.swing.table.DefaultTableModel(
@@ -375,7 +389,7 @@ public int getSegundosMision(){
         });
         jScrollPane4.setViewportView(tblSwapListos);
 
-        jPanel1.add(jScrollPane4, new org.netbeans.lib.awtextra.AbsoluteConstraints(31, 438, 324, 207));
+        jPanel1.add(jScrollPane4, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 370, 400, 300));
 
         cbxAlgoritmos.setBackground(new java.awt.Color(153, 204, 255));
         cbxAlgoritmos.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "FCFS", "Round Robin", "SRT", "Prioridad Estatica", "EDF" }));
@@ -386,11 +400,11 @@ public int getSegundosMision(){
                 cbxAlgoritmosActionPerformed(evt);
             }
         });
-        jPanel1.add(cbxAlgoritmos, new org.netbeans.lib.awtextra.AbsoluteConstraints(29, 22, -1, -1));
+        jPanel1.add(cbxAlgoritmos, new org.netbeans.lib.awtextra.AbsoluteConstraints(280, 10, -1, -1));
 
-        jLabel2.setText("Quantum:");
-        jPanel1.add(jLabel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(215, 25, 63, -1));
-        jPanel1.add(txtQuantum, new org.netbeans.lib.awtextra.AbsoluteConstraints(284, 22, 71, -1));
+        txtQuantum.setForeground(new java.awt.Color(255, 255, 255));
+        txtQuantum.setText("Quantum:");
+        jPanel1.add(txtQuantum, new org.netbeans.lib.awtextra.AbsoluteConstraints(900, 10, 63, -1));
 
         tblBloqueados.setBackground(new java.awt.Color(0, 102, 102));
         tblBloqueados.setModel(new javax.swing.table.DefaultTableModel(
@@ -414,7 +428,7 @@ public int getSegundosMision(){
         });
         jScrollPane2.setViewportView(tblBloqueados);
 
-        jPanel1.add(jScrollPane2, new org.netbeans.lib.awtextra.AbsoluteConstraints(770, 110, 295, 120));
+        jPanel1.add(jScrollPane2, new org.netbeans.lib.awtextra.AbsoluteConstraints(745, 100, 320, 230));
 
         tblSwapBloqueados.setBackground(new java.awt.Color(0, 153, 153));
         tblSwapBloqueados.setModel(new javax.swing.table.DefaultTableModel(
@@ -433,7 +447,7 @@ public int getSegundosMision(){
             tblSwapBloqueados.getColumnModel().getColumn(2).setResizable(false);
         }
 
-        jPanel1.add(jScrollPane5, new org.netbeans.lib.awtextra.AbsoluteConstraints(795, 361, 278, 100));
+        jPanel1.add(jScrollPane5, new org.netbeans.lib.awtextra.AbsoluteConstraints(753, 361, 320, 230));
 
         btnInterrupcion.setBackground(new java.awt.Color(255, 51, 51));
         btnInterrupcion.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
@@ -449,7 +463,7 @@ public int getSegundosMision(){
                 btnInterrupcionActionPerformed(evt);
             }
         });
-        jPanel1.add(btnInterrupcion, new org.netbeans.lib.awtextra.AbsoluteConstraints(420, 410, 310, 130));
+        jPanel1.add(btnInterrupcion, new org.netbeans.lib.awtextra.AbsoluteConstraints(430, 520, 310, 70));
 
         btnGenerar.setText("Generar 20 Procesos");
         btnGenerar.addActionListener(new java.awt.event.ActionListener() {
@@ -457,23 +471,23 @@ public int getSegundosMision(){
                 btnGenerarActionPerformed(evt);
             }
         });
-        jPanel1.add(btnGenerar, new org.netbeans.lib.awtextra.AbsoluteConstraints(500, 340, -1, -1));
+        jPanel1.add(btnGenerar, new org.netbeans.lib.awtextra.AbsoluteConstraints(510, 620, -1, -1));
 
         tblCPU.setBackground(new java.awt.Color(51, 204, 0));
         tblCPU.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
         tblCPU.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null}
+                {null, null, null, null, null},
+                {null, null, null, null, null},
+                {null, null, null, null, null},
+                {null, null, null, null, null}
             },
             new String [] {
-                "ID", "Estado", "MAR", "PC"
+                "ID", "Estado", "MAR", "PC", "Instrucciones"
             }
         ) {
             Class[] types = new Class [] {
-                java.lang.String.class, java.lang.String.class, java.lang.Integer.class, java.lang.Integer.class
+                java.lang.String.class, java.lang.String.class, java.lang.Integer.class, java.lang.Integer.class, java.lang.Integer.class
             };
 
             public Class getColumnClass(int columnIndex) {
@@ -482,10 +496,11 @@ public int getSegundosMision(){
         });
         jScrollPane1.setViewportView(tblCPU);
 
-        jPanel1.add(jScrollPane1, new org.netbeans.lib.awtextra.AbsoluteConstraints(410, 590, 310, 100));
+        jPanel1.add(jScrollPane1, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 710, 410, 100));
 
+        panelGrafica.setBackground(new java.awt.Color(0, 0, 0));
         panelGrafica.setLayout(new java.awt.BorderLayout());
-        jPanel1.add(panelGrafica, new org.netbeans.lib.awtextra.AbsoluteConstraints(750, 510, 300, 190));
+        jPanel1.add(panelGrafica, new org.netbeans.lib.awtextra.AbsoluteConstraints(730, 620, 280, 190));
 
         lblModo.setFont(new java.awt.Font("Segoe UI Black", 0, 18)); // NOI18N
         lblModo.setText("Modo:Usuario");
@@ -494,7 +509,7 @@ public int getSegundosMision(){
         sldVelocidad.setMaximum(2000);
         sldVelocidad.setMinimum(100);
         sldVelocidad.setValue(500);
-        jPanel1.add(sldVelocidad, new org.netbeans.lib.awtextra.AbsoluteConstraints(560, 20, -1, -1));
+        jPanel1.add(sldVelocidad, new org.netbeans.lib.awtextra.AbsoluteConstraints(460, 10, -1, -1));
 
         jLabel3.setFont(new java.awt.Font("Segoe UI Black", 0, 14)); // NOI18N
         jLabel3.setForeground(new java.awt.Color(255, 255, 255));
@@ -504,12 +519,12 @@ public int getSegundosMision(){
         jLabel8.setFont(new java.awt.Font("Segoe UI Black", 0, 14)); // NOI18N
         jLabel8.setForeground(new java.awt.Color(255, 255, 255));
         jLabel8.setText("Procesador");
-        jPanel1.add(jLabel8, new org.netbeans.lib.awtextra.AbsoluteConstraints(520, 560, 90, 20));
+        jPanel1.add(jLabel8, new org.netbeans.lib.awtextra.AbsoluteConstraints(80, 680, 90, 20));
 
         jLabel9.setFont(new java.awt.Font("Segoe UI Black", 0, 14)); // NOI18N
         jLabel9.setForeground(new java.awt.Color(255, 255, 255));
         jLabel9.setText("Suspendidos Bloqueados");
-        jPanel1.add(jLabel9, new org.netbeans.lib.awtextra.AbsoluteConstraints(810, 320, 200, 20));
+        jPanel1.add(jLabel9, new org.netbeans.lib.awtextra.AbsoluteConstraints(810, 330, 200, 20));
 
         jLabel10.setFont(new java.awt.Font("Segoe UI Black", 0, 14)); // NOI18N
         jLabel10.setForeground(new java.awt.Color(255, 255, 255));
@@ -519,24 +534,24 @@ public int getSegundosMision(){
         jLabel11.setFont(new java.awt.Font("Segoe UI Black", 0, 14)); // NOI18N
         jLabel11.setForeground(new java.awt.Color(255, 255, 255));
         jLabel11.setText("Suspendidos");
-        jPanel1.add(jLabel11, new org.netbeans.lib.awtextra.AbsoluteConstraints(130, 390, 200, 60));
+        jPanel1.add(jLabel11, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 320, 200, 60));
 
         prgMemoria.setStringPainted(true);
-        jPanel1.add(prgMemoria, new org.netbeans.lib.awtextra.AbsoluteConstraints(680, 70, -1, 20));
+        jPanel1.add(prgMemoria, new org.netbeans.lib.awtextra.AbsoluteConstraints(590, 70, -1, 20));
 
         lblMemoriaUsada.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
         lblMemoriaUsada.setForeground(new java.awt.Color(255, 255, 255));
-        lblMemoriaUsada.setText("jLabel1");
-        jPanel1.add(lblMemoriaUsada, new org.netbeans.lib.awtextra.AbsoluteConstraints(730, 40, 70, -1));
+        lblMemoriaUsada.setText("MEMORIA");
+        jPanel1.add(lblMemoriaUsada, new org.netbeans.lib.awtextra.AbsoluteConstraints(610, 40, 120, -1));
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addGap(46, 46, 46)
+                .addGap(34, 34, 34)
                 .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addContainerGap())
+                .addGap(18, 18, 18))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -550,11 +565,9 @@ public int getSegundosMision(){
 
     private void btnGenerarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnGenerarActionPerformed
 
-        try {
+       try {
         semaforoGlobal.acquire();
         
-        actualizarMonitorMemoria(); 
-
         for (int i = 1; i <= 20; i++) {
             String id = "P" + contadorGlobal;
             String nombre = "Tarea_" + contadorGlobal;
@@ -564,29 +577,40 @@ public int getSegundosMision(){
             int deadline = segundosMision + (int) (Math.random() * 200) + 100;
 
             clases.Proceso nuevo = new clases.Proceso(id, nombre, instrucciones, prioridad, deadline, memoriaMB);
-            refrescarBarraMemoria();
             
             if (this.memoriaUsadaActual + memoriaMB <= 200) { 
                 nuevo.setEstado("Listo");
-                colaListos.agregar(nuevo); 
+                
+                if (algoritmoActual.equals("FCFS") || algoritmoActual.equals("RR")) {
+                    colaListos.agregarAlFinal(nuevo); 
+                } else if (algoritmoActual.equals("EDF")) {
+                    colaListos.agregarAlFinal(nuevo);
+                    colaListos.ordenarPorDeadline();
+                } else {
+                    colaListos.agregar(nuevo); 
+                }
                 
                 this.memoriaUsadaActual += memoriaMB;
-                
                 escribirLog("ADMITIDO: " + nombre + " (" + memoriaMB + "MB)");
             } else {
                 nuevo.setEstado("Suspendido");
-                colaSuspendidos.agregar(nuevo);
+                colaSuspendidos.agregarAlFinal(nuevo);
                 escribirLog("SWAP: " + nombre + " a disco (RAM Llena)");
             }
             contadorGlobal++;
         }
         
-        ordenarColaPorPrioridad(colaListos); 
+        // --- YA NO necesitas llamar a ordenarColaPorPrioridad(colaListos) aquí ---
+        // porque la lógica de arriba ya los puso en su lugar según el algoritmo.
+
         semaforoGlobal.release();
         actualizarTablas();
-        actualizarMonitorMemoria(); // Refresca la barra visualmente
+        actualizarMonitorMemoria(); 
+        refrescarBarraMemoria();
         
-    } catch (InterruptedException e) {}
+    } catch (InterruptedException e) {
+        System.out.println("Error en botón generar: " + e.getMessage());
+    }
     }//GEN-LAST:event_btnGenerarActionPerformed
 
     
@@ -610,35 +634,12 @@ public int getSegundosMision(){
     } while (intercambio);
 }
     private void btnInterrupcionActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnInterrupcionActionPerformed
-       // Creamos un hilo anónimo para cumplir con el requisito de "Thread independiente"
-    Thread hiloInterrupcion = new Thread(() -> {
-        try {
-            escribirLog("ALERTA: ¡Colisión inminente detectada!");
-            
-            Thread.sleep(500); 
-            
-            semaforoGlobal.acquire(); 
-            
-            clases.Proceso p = cpu.getProcesoEnEjecucion();
-            if (p != null) {
-                cpu.detenerProcesoInmediatamente(); 
-                p.setEstado("Bloqueado");
-                
-                if (!colaBloqueados.contiene(p)) {
-                    colaBloqueados.agregar(p);
-                }
-                escribirLog("INTERRUPCIÓN: " + p.getNombre() + " evacuado a Bloqueados.");
-                
-                javax.swing.SwingUtilities.invokeLater(() -> actualizarTablas());
-            }
-            semaforoGlobal.release();
-            
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    });
-    
-    hiloInterrupcion.start(); // ¡Iniciamos el hilo!
+      if (cpu.getProcesoEnEjecucion() != null) {
+        escribirLog("SOLICITUD: Interrupción externa enviada a la CPU.");
+        cpu.activarInterrupcion(); 
+    } else {
+        escribirLog("SISTEMA: No hay procesos en ejecución para interrumpir.");
+    }
     }//GEN-LAST:event_btnInterrupcionActionPerformed
 
     private void cbxAlgoritmosActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cbxAlgoritmosActionPerformed
@@ -689,7 +690,6 @@ public int getSegundosMision(){
     private javax.swing.JComboBox<String> cbxAlgoritmos;
     private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel11;
-    private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel8;
     private javax.swing.JLabel jLabel9;
@@ -712,7 +712,7 @@ public int getSegundosMision(){
     private javax.swing.JTable tblSwapBloqueados;
     private javax.swing.JTable tblSwapListos;
     private javax.swing.JTextArea txtLog;
-    private javax.swing.JTextField txtQuantum;
+    private javax.swing.JLabel txtQuantum;
     // End of variables declaration//GEN-END:variables
 
        public void actualizarTablas() {
@@ -734,16 +734,15 @@ public int getSegundosMision(){
 
             
             if (pEnEjecucion != null) {
-                modCPU.addRow(new Object[]{pEnEjecucion.getId(), "Ejecucion", pEnEjecucion.getMar(), pEnEjecucion.getPc()});
+                modCPU.addRow(new Object[]{pEnEjecucion.getId(),"Ejecucion", pEnEjecucion.getInstruccionesTotales(), pEnEjecucion.getMar(), pEnEjecucion.getPc()});
             }
 
           
             datastructura.Nodo actual = colaListos.getInicio();
             while (actual != null) {
                 clases.Proceso p = actual.getDato();
-                if (pEnEjecucion == null || !p.getId().equals(pEnEjecucion.getId())) {
                     modL.addRow(new Object[]{p.getId(), p.getNombre(), p.getInstruccionesTotales(), p.getPrioridad(), p.getDeadline(), p.getPc(), p.getMar(), p.getMemoriaMb(), p.getEstado()});
-                }
+                
                 actual = actual.getSiguiente();
             }
 
@@ -755,7 +754,6 @@ public int getSegundosMision(){
                 actual = actual.getSiguiente();
             }
 
-            // 4. DISCO: Swap (Listos y Bloqueados)
             actual = colaSuspendidos.getInicio();
             while (actual != null) {
                 clases.Proceso p = actual.getDato();
@@ -776,34 +774,39 @@ public int getSegundosMision(){
         }
     
     public void reordenarColaSegunAlgoritmo() {
-        if (colaListos == null || colaListos.estaVacia()) return;
-
-        switch (algoritmoActual) {
-            case "FCFS":
-             
-                break;
-            case "SRT":
-                colaListos.ordenarPorTiempoRestante(); 
-                break;
-            case "Prioridad Estática":
-                colaListos.ordenarPorPrioridad(); 
-                break;
-            case "EDF":
-                colaListos.ordenarPorDeadline(); 
-                break;
-            case "Round Robin":
-                
-                break;
-        }
-        actualizarTablas(); 
+    
+    if (algoritmoActual.equalsIgnoreCase("FCFS")) {
+        return; 
     }
+
+    if (algoritmoActual.equalsIgnoreCase("EDF")) {
+        colaListos.ordenarPorDeadline();
+    } 
+    else if (algoritmoActual.equalsIgnoreCase("Prioridad Estatica")) {
+        colaListos.ordenarPorPrioridad();
+    }
+    
+    else if (algoritmoActual.equalsIgnoreCase("SRT")) {
+        colaListos.ordenarPorTiempoRestante();
+    }
+    else if (algoritmoActual.equalsIgnoreCase("RR")) {
+        return;
+    }
+    actualizarTablas(); 
+}
+        
+    
     
             public String getAlgoritmoActual() {
             return algoritmoActual;
         }
 
         public int getQuantumGlobal() {
-            return 3; 
+                try {
+                return Integer.parseInt(txtQuantum.getText());
+            } catch (NumberFormatException e) {
+                return 3; 
+              }
         }
 
         public ListaEnlazada getColaListos() {
@@ -843,7 +846,7 @@ public int getSegundosMision(){
                 memoriaUsadaActual += urgente.getMemoriaMb();
 
                 urgente.setEstado("Listo"); 
-                colaListos.agregar(urgente);
+                colaListos.agregarAlFinal(urgente);
 
                 escribirLog("SWAP-IN: " + urgente.getNombre() + " subió por urgencia (Deadline: " + urgente.getDeadline() + ")");
                 reordenarColaSegunAlgoritmo();

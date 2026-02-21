@@ -180,5 +180,22 @@ public class ListaEnlazada {
             }
         } while (huboCambio);
     }
+    
+    
+        public void agregarAlFinal(Proceso nuevoProceso) {
+        datastructura.Nodo nuevoNodo = new datastructura.Nodo(nuevoProceso);
+
+        // Si la lista está vacía, el nuevo nodo es el inicio
+        if (inicio == null) {
+            inicio = nuevoNodo;
+        } else {
+            datastructura.Nodo actual = inicio;
+            while (actual.getSiguiente() != null) {
+                actual = actual.getSiguiente();
+            }
+            actual.setSiguiente(nuevoNodo);
+        }
+        tamaño++;
+    }
 
 }

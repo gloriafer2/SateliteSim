@@ -53,8 +53,10 @@ public class Proceso {
     public void ejecutarCiclo() {
         this.pc++;
         this.mar++;
-        this.instruccionesTotales--;
         this.tiempoLimite--;
+        if (this.instruccionesTotales > 0) {
+        this.instruccionesTotales--; 
+    }
         
         if(this.tiempoLimite < 0){
             //error deadline

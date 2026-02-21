@@ -28,6 +28,7 @@ public class CPUThread extends Thread {
     public void run() {
         while (true) {
             ventana.limpiarProcesosExpirados();
+            ventana.actualizarTablas();
             
                 try {
                     semaforoCPU.acquire();
@@ -60,7 +61,10 @@ public class CPUThread extends Thread {
                     
                     // 3. EJECUCIÓN DEL CICLO
                     if (procesoEnEjecucion != null) {
+                        comprobarExpropiacion();
                         procesoEnEjecucion.ejecutarCiclo();
+                        ventana.actualizarTablas();
+                        
 
                         // Aquí sumo un FALLO a la gráfica
                         if (procesoEnEjecucion.getDeadline()<= 0){
@@ -71,7 +75,7 @@ public class CPUThread extends Thread {
                             procesoEnEjecucion = null;
                             ventana.refrescarBarraMemoria();
                         } 
-                        // Aquí sumamos un ÉXITO a la gráfica
+                        // eXITO a la gráfica
                         else if (procesoEnEjecucion.getInstruccionesTotales() <= 0){
                             procesoEnEjecucion.setEstado("Terminado");
                             ventana.sumarExito(); // <--- NUEVO: Actualiza la gráfica
@@ -81,16 +85,19 @@ public class CPUThread extends Thread {
                             ventana.actualizarMonitorMemoria();
                             
                         }
-                        // --- Validar Round Robin ---
-                        else if (ventana.getAlgoritmoActual().equals("Round Robin")){
-                            quantumRestante--;
-                            if(quantumRestante <= 0){
-                                procesoEnEjecucion.setEstado("Listo");
-                                colaListos.agregar(procesoEnEjecucion);
-                                ventana.escribirLog("Round Robin: " + procesoEnEjecucion.getNombre() + " vuelve a la cola por Quantum.");
-                                procesoEnEjecucion = null;
+                        //  Round Robin ---
+                        //  para evitar errores de mayúsculas/minúsculas
+                            String algo = ventana.getAlgoritmoActual();
+                            if (algo.equalsIgnoreCase("RR") || algo.equalsIgnoreCase("Round Robin")) {
+                                quantumRestante--; // Restamos uno en cada ciclo de reloj
+                                if (quantumRestante <= 0) {
+                                    procesoEnEjecucion.setEstado("Listo");
+                                    
+                                    colaListos.agregarAlFinal(procesoEnEjecucion); 
+                                    ventana.escribirLog("TIMEOUT: " + procesoEnEjecucion.getNombre() + " va al final de la fila.");
+                                    procesoEnEjecucion = null; // Liberamos el CPU para el siguiente
+                                }
                             }
-                        }
                     }
 
                     semaforoCPU.release();
@@ -103,23 +110,70 @@ public class CPUThread extends Thread {
         
         
     }
+    
+    
+    private void comprobarExpropiacion() {
+    // Si la cola está vacía, no hay con quién pelear el puesto
+    if (ventana.getColaListos().estaVacia()) return;
 
-    private void manejarInterrupcion() {
-        ventana.actualizarModoSistema("KERNEL");
-        if (procesoEnEjecucion != null) {
-            if (procesoEnEjecucion.getEstado().equals("Bloqueado")) {
-                procesoEnEjecucion = null; 
-            } else {
-                procesoEnEjecucion.setEstado("Listo");
-                colaListos.agregar(procesoEnEjecucion);
-                colaListos.ordenarPorDeadline();
-                procesoEnEjecucion = null;
-            }
+    String algoritmo = ventana.getAlgoritmoActual();
+    clases.Proceso candidato = ventana.getColaListos().getInicio().getDato();
+    boolean expropiar = false;
+
+    // Evaluamos según las reglas de cada algoritmo preemptivo
+    if (algoritmo.equals("EDF")) {
+        // En EDF, importa quién está más cerca de morir
+        if (candidato.getDeadline() < procesoEnEjecucion.getDeadline()) {
+            expropiar = true;
         }
-        this.interrupcionActiva = false; 
-        ventana.actualizarTablas();
+    } else if (algoritmo.equals("Prioridad Estatica")) { 
+        // En Prioridad, 1 es más urgente que 5
+        if (candidato.getPrioridad() < procesoEnEjecucion.getPrioridad()) {
+            expropiar = true;
+        }
+    } else if (algoritmo.equals("SRT")) {
+        // En SRT, importa quién tiene menos instrucciones restantes
+        if (candidato.getInstruccionesTotales() < procesoEnEjecucion.getInstruccionesTotales()) {
+            expropiar = true;
+        }
     }
 
+    // Si el candidato es mejor, hacemos el cambio de contexto (Preemption)
+    if (expropiar) {
+        ventana.escribirLog("EXPROPIACIÓN: " + candidato.getNombre() + " interrumpió a " + procesoEnEjecucion.getNombre());
+        
+        // 1. Devolvemos el proceso actual a la RAM
+        procesoEnEjecucion.setEstado("Listo");
+        ventana.getColaListos().agregarAlFinal(procesoEnEjecucion);
+        
+        // 2. Subimos al candidato al CPU
+        procesoEnEjecucion = ventana.getColaListos().eliminarPrimero();
+        procesoEnEjecucion.setEstado("Ejecucion");
+        
+        // 3. Reordenamos la cola para que el expropiado quede en su lugar correcto
+        ventana.reordenarColaSegunAlgoritmo();
+    }
+}
+
+    private void manejarInterrupcion() {
+    ventana.actualizarModoSistema("KERNEL");
+    
+    if (procesoEnEjecucion != null) {
+       
+        procesoEnEjecucion.setEstado("Bloqueado");
+        procesoEnEjecucion.setCiclosBloqueo(5); 
+        
+        if (!colaBloqueados.contiene(procesoEnEjecucion)) {
+            colaBloqueados.agregarAlFinal(procesoEnEjecucion);
+        }
+        
+        ventana.escribirLog("INTERRUPCIÓN: " + procesoEnEjecucion.getNombre() + " movido a BLOQUEADOS.");
+        procesoEnEjecucion = null;
+    }
+    
+    this.interrupcionActiva = false; 
+    ventana.actualizarTablas();
+}
     public void activarInterrupcion() {
         this.interrupcionActiva = true;
     }
@@ -136,6 +190,8 @@ public class CPUThread extends Thread {
             this.procesoEnEjecucion = null;
             this.interrupcionActiva = false; 
         }
+        
+        
     }
     
 }
